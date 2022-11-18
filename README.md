@@ -27,6 +27,34 @@ This game aims to guess the correct sequence of colors in 4 positions. We will h
         - Possible peg colors (minimum 2)
         - Allow/disallow duplicate pins in hidden pegs. 
 
+```
+data Slot
+  = Empty
+  | Guess PinColor
+  deriving (Show, Eq)
+
+data Pin
+  = Empty
+  | White
+  | Red
+
+data PinColor
+  = Red
+  | Blue
+  | Green
+  | Yellow
+  deriving (Eq)
+```
+### Game State
+- BoardState :: [[Slot]]
+- BoardStateSelect :: Int 
+- Solution :: [Solt]
+- hiddeSolution :: Bool
+- PinState :: [[Pin]]
+- GameOver :: Bool
+
+
+
 ## Collaborator
 - Chufan Wu
 - Yuan Chang
