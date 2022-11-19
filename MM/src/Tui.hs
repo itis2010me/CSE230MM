@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Tui where
 
--- import Lib (Slot, PinColor)
+import Lib
 
 import Brick.AttrMap
 import Brick.Main
@@ -57,27 +57,27 @@ initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Guess Red, Guess Blue, Guess Green, Guess Yellow], 2)
             ]
 
-data Slot
-  = Empty
-  | Guess PinColor
-  deriving (Show, Eq)
+-- data Slot
+--   = Empty
+--   | Guess PinColor
+--   deriving (Show, Eq)
 
-data PinColor
-  = Red
-  | Blue
-  | Green
-  | White
-  | Purple
-  | Yellow
-  deriving (Eq)
+-- data PinColor
+--   = Red
+--   | Blue
+--   | Green
+--   | White
+--   | Purple
+--   | Yellow
+--   deriving (Eq)
 
-instance Show PinColor where
-  show Red    = "R"
-  show Blue   = "B"
-  show Green  = "G"
-  show White  = "W"
-  show Purple = "P"
-  show Yellow = "Y"
+-- instance Show PinColor where
+--   show Red    = "R"
+--   show Blue   = "B"
+--   show Green  = "G"
+--   show White  = "W"
+--   show Purple = "P"
+--   show Yellow = "Y"
 
 tuiApp :: App TuiState e ()
 tuiApp =
