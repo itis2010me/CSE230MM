@@ -92,8 +92,8 @@ tuiApp =
 buildInitialState :: IO TuiState
 buildInitialState =
     pure TuiState
-    { homeScreen =    [ "1 Player"
-                      , "2 Players"
+    { homeScreen =    [ "  1 Player    " 
+                      , "  2 Players   "
                       , "DKAI vs player"
                       ]
     , screen        = 1
