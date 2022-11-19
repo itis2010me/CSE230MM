@@ -15,7 +15,7 @@ import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core (padLeftRight)
--- import Control.Lens hiding (Empty)
+import Control.Lens hiding (Empty)
 
 tui :: IO ()
 tui = do
@@ -26,10 +26,12 @@ tui = do
 -- MM State
 data TuiState =
   TuiState
-  {   state_content :: [String]
+  {   homeScreen :: [String]
     , navSelect :: Int
     , screen :: Int
     , gameState :: [([Slot], Int)]
+    , gameStateIndex :: (Int, Int) -- current input pointer
+    , pinSlots :: [[String]]
   }
   deriving (Show, Eq)
 
@@ -51,7 +53,7 @@ initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 1)
+            , ([Guess Red, Empty, Empty, Empty], 1)
             , ([Guess Red, Guess Blue, Guess Green, Guess Yellow], 2)
             ]
 
@@ -65,7 +67,7 @@ data PinColor
   | Blue
   | Green
   | White
-  | Black
+  | Purple
   | Yellow
   deriving (Eq)
 
@@ -74,8 +76,8 @@ instance Show PinColor where
   show Blue   = "B"
   show Green  = "G"
   show White  = "W"
-  show Black  = "Bl"
-  show Yellow = "y"
+  show Purple = "P"
+  show Yellow = "Y"
 
 tuiApp :: App TuiState e ()
 tuiApp =
@@ -90,27 +92,30 @@ tuiApp =
 buildInitialState :: IO TuiState
 buildInitialState =
     pure TuiState
-    { state_content = [ "1 Player      "
-                      , "2 Players     "
+    { homeScreen =    [ "1 Player"
+                      , "2 Players"
                       , "DKAI vs player"
                       ]
     , screen        = 1
     , navSelect     = 1
     , gameState     = initialGS
+    , gameStateIndex = (0,0) -- current input pointer
+    , pinSlots = []
     }
 
 drawTui :: TuiState -> [Widget ()]
 drawTui ts =
     case screen ts of
-        0  -> [vBox $ map f [last (state_content ts)]]
+        0  -> [vBox $ map f [last (homeScreen ts)]]
             where
                 f = str
         1 -> [ui]
             where
               box = B.borderWithLabel label inside
-              inside = vBox $ map drawListElement (state_content ts)
+              inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0) <=> placeHolder
               label = str "MasterMind"
               ui = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
+              placeHolder = str "                  "
         2 -> [gameUI]
           where
             gameUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
@@ -124,6 +129,15 @@ controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+
               controlLabel = str "Controls"
               controls = vBox $ map drawListElement controlT
               navigationC = vBox $ map drawListElement navControl
+--                 gameModes  selec  count
+drawHomeScreen :: [String] -> Int -> Int -> Widget ()
+drawHomeScreen [] _ _ = emptyWidget
+drawHomeScreen (x:xs) m n = current <=> rest
+                        where
+                          current = if (m == n)
+                                    then str "> " <+> str x <+> str " <"
+                                    else str x
+                          rest = drawHomeScreen xs m (n+1)
 
 drawListElement :: String -> Widget ()
 drawListElement s = padLeftRight 5 $ str s
@@ -150,25 +164,52 @@ drawSlots ((Guess c):xs) = str slotColor <+> rest
 
 
 update :: TuiState -> String -> TuiState
-update s ns = TuiState {state_content = old_contents ++ [ns],
+update s ns = TuiState {homeScreen = old_contents ++ [ns],
                         screen = screen s,
                         navSelect     = navSelect s,
-                        gameState     = gameState s
+                        gameState     = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots = pinSlots s
                         }
   where
-    old_contents = state_content s
+    old_contents = homeScreen s
 
-toggle :: TuiState -> TuiState
-toggle s = TuiState
-                    {
-                      state_content = old_contents,
-                      screen        = new_screen,
-                      navSelect     = navSelect s,
-                      gameState     = gameState s
-                    }
+homeScreenSelect :: TuiState -> Int -> TuiState
+homeScreenSelect s dir = 
+  case screen s of
+    1 -> case dir of 
+          1 -> TuiState {homeScreen = homeScreen s,
+                        screen      = screen s,
+                        navSelect     = newNavSelect,
+                        gameState     = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots = pinSlots s
+                        }
             where
-                old_contents = state_content s
-                new_screen   = mod ((screen s) + 1) 3
+             newNavSelect = if (navSelect s) == 2 then 0 else (navSelect s) + 1
+
+          _ -> TuiState {homeScreen = homeScreen s,
+                         screen = screen s,
+                         navSelect     = newNavSelect,
+                         gameState     = gameState s,
+                         gameStateIndex = gameStateIndex s,
+                         pinSlots = pinSlots s
+                        }
+            where
+              newNavSelect = if (navSelect s) == 0 then 2 else (navSelect s) - 1
+    _ -> s
+
+-- toggle :: TuiState -> TuiState
+-- toggle s = TuiState
+--                     {
+--                       homeScreen    = homeScreen s,
+--                       screen        = new_screen,
+--                       navSelect     = new_nav,
+--                       gameState     = gameState s
+--                     }
+--             where
+--                 old_contents = homeScreen s
+--                 new_screen   = mod ((screen s) + 1) 3
 
 handleTuiEvent :: TuiState -> BrickEvent n e -> EventM n (Next TuiState)
 handleTuiEvent s e =
@@ -178,9 +219,10 @@ handleTuiEvent s e =
         EvKey (KChar 'q')  [] -> halt s
         EvKey (KLeft)      [] -> continue $ update s "←"
         EvKey (KRight)     [] -> continue $ update s "→"
-        EvKey (KUp)        [] -> continue $ update s "↑"
-        EvKey (KDown)      [] -> continue $ update s "↓"
-        EvKey (KChar 'a')  [] -> continue $ toggle s
-        EvKey (KChar 'd')  [] -> continue $ toggle s
+        EvKey (KUp)        [] -> continue $ homeScreenSelect s (-1)
+        EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
+        -- EvKey (KChar 'a')  [] -> continue $ toggle s
+        -- EvKey (KChar 'd')  [] -> continue $ toggle s
         _ -> continue s
     _ -> continue s
+                                              
