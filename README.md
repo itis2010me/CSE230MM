@@ -7,6 +7,40 @@ Our application is based on the game "MasterMind".
 ## [Classic MasterMind Game](https://en.wikipedia.org/wiki/Mastermind_(board_game))
 This game aims to guess the correct sequence of colors in 4 positions. We will have two players, one player guess and one player provide the colors and the positions of the 4 pegs. For example, the answer could be blue, red, yellow, green and the player needs to guess both the color and the order correctly. There will be 6 colors available. The guesser will guess 10 rounds and each round the player would know extra information about the answer based on the current guess.
 
+## Application Architecture
+```
+data Slot
+  = Empty
+  | Guess PinColor
+  deriving (Show, Eq)
+
+data PinColor
+  = Red
+  | Blue
+  | Green
+  | White
+  | Purple
+  | Yellow
+  deriving (Eq)
+```
+### Game State
+```
+TuiState
+  {   homeScreen     :: [String]
+    , navSelect      :: Int
+    , screen         :: Int
+    , gameState      :: [([Slot], Int)]
+    , gameStateIndex :: (Int, Int) -- current input pointer
+    , pinSlots       :: [[String]]
+  }
+```
+*TODO :: further explanation*
+
+## Challenges
+*TODO*
+
+
+
 ## Goals
 ### G1
 - Basic TUI setup as well as basic game state logic. 
@@ -27,31 +61,7 @@ This game aims to guess the correct sequence of colors in 4 positions. We will h
         - Possible peg colors (minimum 2)
         - Allow/disallow duplicate pins in hidden pegs. 
 
-```
-data Slot
-  = Empty
-  | Guess PinColor
-  deriving (Show, Eq)
 
-data Pin
-  = Empty
-  | White
-  | Red
-
-data PinColor
-  = Red
-  | Blue
-  | Green
-  | Yellow
-  deriving (Eq)
-```
-### Game State
-- BoardState :: [[Slot]]
-- BoardStateSelect :: Int 
-- Solution :: [Solt]
-- hiddeSolution :: Bool
-- PinState :: [[Pin]]
-- GameOver :: Bool
 
 
 
@@ -60,3 +70,6 @@ data PinColor
 - Yuan Chang
 - Yuxin Liu
 - Siran Ma
+
+### History
+Last edit Nov 18, 2022
