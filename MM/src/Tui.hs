@@ -26,12 +26,12 @@ tui = do
 -- MM State
 data TuiState =
   TuiState
-  {   homeScreen :: [String]
-    , navSelect :: Int
-    , screen :: Int
-    , gameState :: [([Slot], Int)]
+  {   homeScreen     :: [String]
+    , navSelect      :: Int
+    , screen         :: Int
+    , gameState      :: [([Slot], Int)]
     , gameStateIndex :: (Int, Int) -- current input pointer
-    , pinSlots :: [[String]]
+    , pinSlots       :: [[String]]
   }
   deriving (Show, Eq)
 
@@ -136,7 +136,7 @@ drawHomeScreen (x:xs) m n = current <=> rest
                         where
                           current = if (m == n)
                                     then str "> " <+> str x <+> str " <"
-                                    else str x
+                                    else str "  " <+> str x <+> str "  "
                           rest = drawHomeScreen xs m (n+1)
 
 drawListElement :: String -> Widget ()
