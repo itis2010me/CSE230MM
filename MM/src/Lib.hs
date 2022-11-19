@@ -10,7 +10,7 @@ data PinColor
   | Blue
   | Green
   | White
-  | Black
+  | Purple
   | Yellow
   deriving (Eq)
 
@@ -19,8 +19,8 @@ instance Show PinColor where
   show Blue   = "B"
   show Green  = "G"
   show White  = "W"
-  show Black  = "Bl"
-  show Yellow = "y"
+  show Purple = "P"
+  show Yellow = "Y"
 
 red :: Slot
 red = Guess Red
@@ -32,6 +32,8 @@ yellow :: Slot
 yellow = Guess Yellow
 white :: Slot
 white = Guess White
+purple :: Slot
+purple = Guess Purple
 
 testSol :: [Slot]
 testSol = [green, white, red, blue]

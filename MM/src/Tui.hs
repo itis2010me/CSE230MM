@@ -112,10 +112,9 @@ drawTui ts =
         1 -> [ui]
             where
               box = B.borderWithLabel label inside
-              inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0) <=> placeHolder
+              inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
               label = str "MasterMind"
               ui = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
-              placeHolder = str "                  "
         2 -> [gameUI]
           where
             gameUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
