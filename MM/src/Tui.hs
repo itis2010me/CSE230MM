@@ -15,7 +15,7 @@ import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core (padLeftRight)
-import Control.Lens hiding (Empty)
+-- import Control.Lens hiding (Empty)
 
 tui :: IO ()
 tui = do
@@ -43,7 +43,7 @@ controlT = [ "q - exit", "a - red", "s - blue", "d - green", "f - white"
 navControl = [ "↑/↓ - Navigation"
              , "↩ - Selec"]
 
-initialGS = [ ([Empty, Empty, Empty, Empty], `0)
+initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)

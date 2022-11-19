@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Tui
   other-modules:
       Paths_MM
   hs-source-dirs:
@@ -33,6 +34,9 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
   build-depends:
       base >=4.7 && <5
+    , brick
+    , lens
+    , vty
   default-language: Haskell2010
 
 executable MM-exe
@@ -45,6 +49,9 @@ executable MM-exe
   build-depends:
       MM
     , base >=4.7 && <5
+    , brick
+    , lens
+    , vty
   default-language: Haskell2010
 
 test-suite MM-test
@@ -58,4 +65,7 @@ test-suite MM-test
   build-depends:
       MM
     , base >=4.7 && <5
+    , brick
+    , lens
+    , vty
   default-language: Haskell2010
