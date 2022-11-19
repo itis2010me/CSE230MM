@@ -43,7 +43,7 @@ controlT = [ "q - exit", "a - red", "s - blue", "d - green", "f - white"
 navControl = [ "↑/↓ - Navigation"
              , "↩ - Selec"]
 
-initialGS = [ ([Empty, Empty, Empty, Empty], `0)
+initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)

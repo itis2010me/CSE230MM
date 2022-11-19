@@ -35,6 +35,10 @@ ghc-options:
 
 library:
   source-dirs: src
+  dependencies:
+    - brick
+    - lens
+    - vty
 
 executables:
   MM-exe:
@@ -46,6 +50,9 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - MM
+    - brick
+    - lens
+    - vty
 
 tests:
   MM-test:
@@ -57,3 +64,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - MM
+    - brick
+    - lens
+    - vty
