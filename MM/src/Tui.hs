@@ -31,7 +31,7 @@ data TuiState =
     , screen         :: Int              -- 0: ?, 1: homeScreen, 2: gameScreen
     , gameState      :: [([Slot], Int)]  -- 10 rounds of guessing state for gameScreen
     , gameStateIndex :: (Int, Int)       -- current input pointer, rowIndex and colIndex
-    , pinSlots       :: [[String]]       -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
+    , pinSlots       :: [[Slot]]         -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
   }
   deriving (Show, Eq)
 
@@ -52,6 +52,19 @@ initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 1)
+            ]
+
+initialRS :: [[Slot]]
+initialRS = [ [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
             ]
 
 tuiApp :: App TuiState e ()
@@ -75,7 +88,7 @@ buildInitialState =
     , navSelect      = 1
     , gameState      = initialGS
     , gameStateIndex = (9, 0)
-    , pinSlots       = []
+    , pinSlots       = initialRS
     }
 
 drawTui :: TuiState -> [Widget ()]
@@ -92,10 +105,13 @@ drawTui ts =
               homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
         2  -> [gameUI]
             where
-              box    = B.borderWithLabel label inside
-              inside = vBox $ map drawRow (gameState ts)
-              label  = str "MasterMind"
-              gameUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
+              boxGuess     = B.borderWithLabel labelGuess insideGuess
+              insideGuess  = vBox $ map drawRow (gameState ts)
+              labelGuess   = str "MasterMind"
+              boxResult    = B.borderWithLabel labelResult insideResult
+              insideResult = vBox $ map drawSlots (pinSlots ts)
+              labelResult  = str "Result"
+              gameUI = (C.vCenter $ C.hCenter $ (boxGuess <+> boxResult)) <=> (C.vCenter $ C.hCenter $ controlBox)
 
 controlBox :: Widget ()
 controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC)
