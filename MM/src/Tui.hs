@@ -50,8 +50,8 @@ initialGS = [ ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
             , ([Empty, Empty, Empty, Empty], 0)
-            , ([Guess Red, Empty, Empty, Empty], 1)
-            , ([Guess Red, Guess Blue, Guess Green, Guess Yellow], 2)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 1)
             ]
 
 tuiApp :: App TuiState e ()
@@ -231,6 +231,11 @@ handleTuiEvent s e =
         EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
         EvKey (KEnter)     [] -> continue $ toggle s
         EvKey (KChar 'r')  [] -> continue $ gameScreenSelect s (Guess Red)
+        EvKey (KChar 'b')  [] -> continue $ gameScreenSelect s (Guess Blue)
+        EvKey (KChar 'g')  [] -> continue $ gameScreenSelect s (Guess Green)
+        EvKey (KChar 'w')  [] -> continue $ gameScreenSelect s (Guess White)
+        EvKey (KChar 'p')  [] -> continue $ gameScreenSelect s (Guess Purple)
+        EvKey (KChar 'y')  [] -> continue $ gameScreenSelect s (Guess Yellow)
         _                     -> continue s
     _ -> continue s
                                               
