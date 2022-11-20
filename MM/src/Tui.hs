@@ -8,7 +8,7 @@ import Brick.Main
 import Brick.Types
 import Brick.Widgets.Core
 import Graphics.Vty.Input.Events
-import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget)
+import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize)
 import Brick.Widgets.Center (center)
 import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style
@@ -32,6 +32,7 @@ data TuiState =
     , gameState      :: [([Slot], Int)]  -- 10 rounds of guessing state for gameScreen
     , gameStateIndex :: (Int, Int)       -- current input pointer, rowIndex and colIndex
     , pinSlots       :: [[Slot]]         -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
+    , boss           :: ([Slot], Bool)   -- guess for guessing player to guess
   }
   deriving (Show, Eq)
 
@@ -80,15 +81,16 @@ tuiApp =
 buildInitialState :: IO TuiState
 buildInitialState =
     pure TuiState
-    { homeScreen     =    [ "  1 Player    " 
+    { homeScreen     =    [ "  1 Player    "
                           , "  2 Players   "
                           , "DKAI vs player"
                           ]
     , screen         = 1
-    , navSelect      = 1
+    , navSelect      = 0
     , gameState      = initialGS
     , gameStateIndex = (9, 0)
     , pinSlots       = initialRS
+    , boss           = ([Empty, Empty, Empty, Empty], False)
     }
 
 drawTui :: TuiState -> [Widget ()]
@@ -103,15 +105,18 @@ drawTui ts =
               inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
               label  = str "MasterMind"
               homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
-        2  -> [gameUI]
+        2  -> [outUI]
             where
               boxGuess     = B.borderWithLabel labelGuess insideGuess
               insideGuess  = vBox $ map drawRow (gameState ts)
-              labelGuess   = str "MasterMind"
+              labelGuess   = str "Guess"
               boxResult    = B.borderWithLabel labelResult insideResult
               insideResult = vBox $ map drawSlots (pinSlots ts)
               labelResult  = str "Result"
-              gameUI = (C.vCenter $ C.hCenter $ (boxGuess <+> boxResult)) <=> (C.vCenter $ C.hCenter $ controlBox)
+              bossUI       = drawBossUI (boss ts) "Success!"
+              gameUI       = C.vCenter $ C.hCenter (boxGuess <+> boxResult)
+              mUI          = setAvailableSize (50, 25) (C.vCenter $ C.hCenter (bossUI <=> gameUI))
+              outUI        = (B.borderWithLabel (str "MasterMind") mUI <+> C.vCenter (C.hCenter controlBox))
         -- Player input solution screen
         -- 3  -> [intputUI]
         --     where
@@ -120,9 +125,20 @@ drawTui ts =
         --       label  = str "MasterMind"
         --       homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
 
+drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
+drawBossUI (solution, show) label = bUI
+            where
+              box    = B.borderWithLabel label inside
+              inside = if show then drawSlots solution else hidden
+              label  = if show then str "Solution" else str "Boss"
+              bUI    = C.vCenter $ C.hCenter box
+              hidden = str " [X][X][X][X] "
+
+
+
 controlBox :: Widget ()
 controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC)
-            where 
+            where
               controlLabel = str "Controls"
               controls     = vBox $ map drawListElement controlT
               navigationC  = vBox $ map drawListElement navControl
@@ -150,12 +166,12 @@ drawRow row = case snd row of
                 emptySpace = str " "
 
 drawSlots :: [Slot] -> Widget ()
-drawSlots []             = emptyWidget  
+drawSlots []             = emptyWidget
 drawSlots (Empty:xs)     = str "[ ]" <+> rest
-                      where 
+                      where
                         rest      = drawSlots xs
-drawSlots ((Guess c):xs) = str slotColor <+> rest 
-                      where 
+drawSlots ((Guess c):xs) = str slotColor <+> rest
+                      where
                         slotColor = "[" ++ show c ++ "]"
                         rest      = drawSlots xs
 
@@ -165,21 +181,23 @@ update s ns = TuiState {homeScreen     = oldContents ++ [ns],
                         navSelect      = navSelect s,
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
-                        pinSlots       = pinSlots s
+                        pinSlots       = pinSlots s,
+                        boss           = boss s
                         }
   where
     oldContents = homeScreen s
 
 homeScreenSelect :: TuiState -> Int -> TuiState
-homeScreenSelect s dir = 
+homeScreenSelect s dir =
   case screen s of
-    1 -> case dir of 
+    1 -> case dir of
           1 -> TuiState {homeScreen    = homeScreen s,
                         screen         = screen s,
                         navSelect      = newNavSelect,
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
-                        pinSlots       = pinSlots s
+                        pinSlots       = pinSlots s,
+                        boss           = boss s
                         }
             where
              newNavSelect = if (navSelect s) == 2 then 0 else (navSelect s) + 1
@@ -189,7 +207,8 @@ homeScreenSelect s dir =
                          navSelect      = newNavSelect,
                          gameState      = gameState s,
                          gameStateIndex = gameStateIndex s,
-                         pinSlots       = pinSlots s
+                         pinSlots       = pinSlots s,
+                         boss           = boss s
                         }
             where
               newNavSelect = if (navSelect s) == 0 then 2 else (navSelect s) - 1
@@ -203,7 +222,8 @@ toggle s = TuiState
                       navSelect      = navSelect s,
                       gameState      = gameState s,
                       gameStateIndex = gameStateIndex s,
-                      pinSlots       = pinSlots s
+                      pinSlots       = pinSlots s,
+                      boss           = boss s
                     }
             where
                 newScreen   = mod ((screen s) + 1) 3
@@ -218,7 +238,8 @@ gameScreenSelect s guess =
                   navSelect      = navSelect s,
                   gameState      = newGameState,
                   gameStateIndex = newGameStateIndex,
-                  pinSlots       = newPinSlots
+                  pinSlots       = newPinSlots,
+                  boss           = boss s
                 }
       where
         newPinSlots  = if colIndex == 3
@@ -232,7 +253,7 @@ gameScreenSelect s guess =
                        else if snd row == 1 && colIndex /= 3
                        then (replaceList (fst row) colIndex guess, 1)
                        else row
-        newGameStateIndex = if colIndex == 3 
+        newGameStateIndex = if colIndex == 3
                             then (rowIndex - 1, 0) -- rowIndex starts at 9, decrement to move up
                             else (rowIndex, colIndex + 1)
         rowIndex     = fst (gameStateIndex s)
@@ -266,4 +287,3 @@ handleTuiEvent s e =
         EvKey (KChar 'y')  [] -> continue $ gameScreenSelect s yellow
         _                     -> continue s
     _ -> continue s
-                                              
