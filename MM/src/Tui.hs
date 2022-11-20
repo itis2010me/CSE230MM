@@ -232,7 +232,7 @@ gameScreenSelect s guess =
         colIndex     = snd (gameStateIndex s)
         newRowIndex  = fst newGameStateIndex
         newRow       = ([Empty, Empty, Empty, Empty], 1)
-        guessRow     = fst (head (snd (splitAt rowIndex (gameState s))))
+        guessRow     = fst (head (snd (splitAt rowIndex newGameState)))
         judgeResult  = masterJudge testSol guessRow
     _ -> s
 

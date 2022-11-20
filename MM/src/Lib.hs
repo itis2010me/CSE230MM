@@ -39,7 +39,7 @@ testSol :: [Slot]
 testSol = [green, white, red, blue]
 
 testGuess :: [Slot]
-testGuess = [green, green, white, yellow]
+testGuess = [green, white, blue, red]
 
 --        sol       guess                         output    output
 judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
