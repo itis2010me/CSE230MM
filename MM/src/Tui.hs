@@ -211,10 +211,13 @@ gameScreenSelect s guess =
                   navSelect      = navSelect s,
                   gameState      = newGameState,
                   gameStateIndex = newGameStateIndex,
-                  pinSlots       = pinSlots s
+                  pinSlots       = newPinSlots
                 }
-      where 
-        newGameState = if snd (gameStateIndex s) == 3
+      where
+        newPinSlots  = if colIndex == 3
+                       then replaceList (pinSlots s) rowIndex judgeResult
+                       else pinSlots s
+        newGameState = if colIndex == 3
                        then replaceList (map f (gameState s)) newRowIndex newRow
                        else map f (gameState s)
         f row        = if snd row == 1 && colIndex == 3
@@ -229,6 +232,8 @@ gameScreenSelect s guess =
         colIndex     = snd (gameStateIndex s)
         newRowIndex  = fst newGameStateIndex
         newRow       = ([Empty, Empty, Empty, Empty], 1)
+        guessRow     = fst (head (snd (splitAt rowIndex (gameState s))))
+        judgeResult  = masterJudge testSol guessRow
     _ -> s
 
 replaceList :: [a] -> Int -> a -> [a]

@@ -41,25 +41,27 @@ testSol = [green, white, red, blue]
 testGuess :: [Slot]
 testGuess = [green, green, white, yellow]
 
---        sol       guess                          output      output
-judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [String] -> [String]
+--        sol       guess                         output    output
+judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
 judge _ [] ns ng out = judgeW ns ng out
 judge (s:sols) (g:gs) ns ng out = 
   if s == g 
-    then judge sols gs ns ng (out ++ ["R"]) 
+    then judge sols gs ns ng (out ++ [red]) 
     else judge sols gs (ns ++ [s]) (ng ++ [g]) out
-judge _ _ _ _ _ = ["Error"]
+judge _ _ _ _ _ = [Empty]
 
-judgeW :: [Slot] -> [Slot] -> [String] -> [String]
+--         sol       guess     output   output
+judgeW :: [Slot] -> [Slot] -> [Slot] -> [Slot]
 judgeW _ [] out = out
 judgeW solution (g:gs) out =
   let (newS, b) = check solution g ([], False) in
     if b
       then
-        judgeW newS gs (out ++ ["W"])
+        judgeW newS gs (out ++ [white])
       else
         judgeW solution gs out
 
+--        sol     one guess
 check :: [Slot] -> Slot -> ([Slot], Bool) -> ([Slot], Bool)
 check [] _ res = res
 check (s:sol) g (slots, _) =
@@ -67,5 +69,10 @@ check (s:sol) g (slots, _) =
     then check [] g (slots ++ sol, True)
     else check sol g (slots ++ [s], False)
 
-masterJudge :: [Slot] -> [Slot] -> [String]
-masterJudge s g = judge s g [] [] []
+masterJudge :: [Slot] -> [Slot] -> [Slot]
+masterJudge s g = 
+  if (emptyLength > 0)
+  then res ++ (replicate emptyLength Empty)
+  else res
+    where res         = judge s g [] [] []
+          emptyLength = 4 - (length res)
