@@ -230,12 +230,12 @@ handleTuiEvent s e =
         EvKey (KUp)        [] -> continue $ homeScreenSelect s 0
         EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
         EvKey (KEnter)     [] -> continue $ toggle s
-        EvKey (KChar 'r')  [] -> continue $ gameScreenSelect s (Guess Red)
-        EvKey (KChar 'b')  [] -> continue $ gameScreenSelect s (Guess Blue)
-        EvKey (KChar 'g')  [] -> continue $ gameScreenSelect s (Guess Green)
-        EvKey (KChar 'w')  [] -> continue $ gameScreenSelect s (Guess White)
-        EvKey (KChar 'p')  [] -> continue $ gameScreenSelect s (Guess Purple)
-        EvKey (KChar 'y')  [] -> continue $ gameScreenSelect s (Guess Yellow)
+        EvKey (KChar 'r')  [] -> continue $ gameScreenSelect s red
+        EvKey (KChar 'b')  [] -> continue $ gameScreenSelect s blue
+        EvKey (KChar 'g')  [] -> continue $ gameScreenSelect s green
+        EvKey (KChar 'w')  [] -> continue $ gameScreenSelect s white
+        EvKey (KChar 'p')  [] -> continue $ gameScreenSelect s purple
+        EvKey (KChar 'y')  [] -> continue $ gameScreenSelect s yellow
         _                     -> continue s
     _ -> continue s
                                               
