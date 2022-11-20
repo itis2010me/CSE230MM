@@ -112,6 +112,13 @@ drawTui ts =
               insideResult = vBox $ map drawSlots (pinSlots ts)
               labelResult  = str "Result"
               gameUI = (C.vCenter $ C.hCenter $ (boxGuess <+> boxResult)) <=> (C.vCenter $ C.hCenter $ controlBox)
+        -- Player input solution screen
+        -- 3  -> [intputUI]
+        --     where
+        --       box    = B.borderWithLabel label inside
+        --       inside = 
+        --       label  = str "MasterMind"
+        --       homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
 
 controlBox :: Widget ()
 controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC)
@@ -223,7 +230,7 @@ gameScreenSelect s guess =
                        then (replaceList (fst row) colIndex guess, 1)
                        else row
         newGameStateIndex = if colIndex == 3 
-                            then (rowIndex - 1, 0)
+                            then (rowIndex - 1, 0) -- rowIndex starts at 9, decrement to move up
                             else (rowIndex, colIndex + 1)
         rowIndex     = fst (gameStateIndex s)
         colIndex     = snd (gameStateIndex s)
