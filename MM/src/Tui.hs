@@ -35,8 +35,8 @@ data TuiState =
   }
   deriving (Show, Eq)
 
-controlT = [ "q - exit", "a - red", "s - blue", "d - green", "f - white"
-            , "g - purple", "h - yellow"]
+controlT = [ "q - exit", "r - red", "b - blue", "g - green", "w - white"
+            , "p - purple", "y - yellow"]
 navControl = [ "↑/↓ - Navigation", "↩ - Select"]
 
 -- 10 rounds of guessing state for gameScreen
@@ -74,7 +74,7 @@ buildInitialState =
     , screen         = 1
     , navSelect      = 1
     , gameState      = initialGS
-    , gameStateIndex = (0, 0)
+    , gameStateIndex = (9, 0)
     , pinSlots       = []
     }
 
@@ -172,17 +172,52 @@ homeScreenSelect s dir =
               newNavSelect = if (navSelect s) == 0 then 2 else (navSelect s) - 1
     _ -> s
 
--- toggle :: TuiState -> TuiState
--- toggle s = TuiState
---                     {
---                       homeScreen    = homeScreen s,
---                       screen        = new_screen,
---                       navSelect     = new_nav,
---                       gameState     = gameState s
---                     }
---             where
---                 oldContents = homeScreen s
---                 new_screen   = mod ((screen s) + 1) 3
+toggle :: TuiState -> TuiState
+toggle s = TuiState
+                    {
+                      homeScreen     = homeScreen s,
+                      screen         = newScreen,
+                      navSelect      = navSelect s,
+                      gameState      = gameState s,
+                      gameStateIndex = gameStateIndex s,
+                      pinSlots       = pinSlots s
+                    }
+            where
+                newScreen   = mod ((screen s) + 1) 3
+
+gameScreenSelect :: TuiState -> Slot -> TuiState
+gameScreenSelect s guess =
+  case screen s of
+    2 -> TuiState
+                {
+                  homeScreen     = homeScreen s,
+                  screen         = screen s,
+                  navSelect      = navSelect s,
+                  gameState      = newGameState,
+                  gameStateIndex = newGameStateIndex,
+                  pinSlots       = pinSlots s
+                }
+      where 
+        newGameState = if snd (gameStateIndex s) == 3
+                       then replaceList (map f (gameState s)) newRowIndex newRow
+                       else map f (gameState s)
+        f row        = if snd row == 1 && colIndex == 3
+                       then (replaceList (fst row) colIndex guess, 2)
+                       else if snd row == 1 && colIndex /= 3
+                       then (replaceList (fst row) colIndex guess, 1)
+                       else row
+        newGameStateIndex = if colIndex == 3 
+                            then (rowIndex - 1, 0)
+                            else (rowIndex, colIndex + 1)
+        rowIndex     = fst (gameStateIndex s)
+        colIndex     = snd (gameStateIndex s)
+        newRowIndex  = fst newGameStateIndex
+        newRow       = ([Empty, Empty, Empty, Empty], 1)
+    _ -> s
+
+replaceList :: [a] -> Int -> a -> [a]
+replaceList s index target = (fst splittedList) ++ [target] ++ (tail (snd splittedList))
+  where splittedList = splitAt index s
 
 handleTuiEvent :: TuiState -> BrickEvent n e -> EventM n (Next TuiState)
 handleTuiEvent s e =
@@ -194,8 +229,8 @@ handleTuiEvent s e =
         EvKey (KRight)     [] -> continue $ update s "→"
         EvKey (KUp)        [] -> continue $ homeScreenSelect s 0
         EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
-        -- EvKey (KChar 'a')  [] -> continue $ toggle s
-        -- EvKey (KChar 'd')  [] -> continue $ toggle s
+        EvKey (KEnter)     [] -> continue $ toggle s
+        EvKey (KChar 'r')  [] -> continue $ gameScreenSelect s (Guess Red)
         _                     -> continue s
     _ -> continue s
                                               
