@@ -8,7 +8,9 @@ import Brick.Main
 import Brick.Types
 import Brick.Widgets.Core
 import Graphics.Vty.Input.Events
-import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom)
+import qualified Graphics.Vty as V
+import Brick.Util
+import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom, withAttr)
 import Brick.Widgets.Center (center)
 import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style
@@ -72,13 +74,16 @@ tuiApp =
     , appChooseCursor = showFirstCursor
     , appHandleEvent  = handleTuiEvent
     , appStartEvent   = pure
-    , appAttrMap      = const $ attrMap mempty []
+    , appAttrMap      = const theMap
+    -- , appAttrMap      = const $ attrMap mempty [ ("red", fg V.red)
+    --                                           , ("blue", V.blue `on` V.blue)
+    --                                           ]
     }
 
 buildInitialState :: IO TuiState
-buildInitialState = do 
+buildInitialState = do
     randomNum        <- randomSingleGuess 4
-    
+
     pure TuiState
       { homeScreen     =    [ "  1 Player    "
                             , "  2 Players   "
@@ -182,23 +187,31 @@ drawSlots []             = emptyWidget
 drawSlots (Empty:xs)     = str "[ ]" <+> rest
                       where
                         rest      = drawSlots xs
-drawSlots ((Guess c):xs) = str slotColor <+> rest
+drawSlots ((Guess c):xs) = setColorF (str slotColor) <+>rest
                       where
+                        setColorF = case c of
+                                    Red -> withAttr "red"
+                                    Blue -> withAttr "blue"
+                                    Green -> withAttr "green"
+                                    White -> withAttr "white"
+                                    Purple -> withAttr "purple"
+                                    Yellow -> withAttr "yellow"
+                                    _      -> id
                         slotColor = "[" ++ show c ++ "]"
                         rest      = drawSlots xs
 
-update :: TuiState -> String -> TuiState
-update s ns = TuiState {homeScreen     = oldContents ++ [ns],
-                        screen         = screen s,
-                        navSelect      = navSelect s,
-                        gameState      = gameState s,
-                        gameStateIndex = gameStateIndex s,
-                        pinSlots       = pinSlots s,
-                        boss           = boss s,
-                        random         = random s
-                        }
-  where
-    oldContents = homeScreen s
+-- update :: TuiState -> String -> TuiState
+-- update s ns = TuiState {homeScreen     = oldContents ++ [ns],
+--                         screen         = screen s,
+--                         navSelect      = navSelect s,
+--                         gameState      = gameState s,
+--                         gameStateIndex = gameStateIndex s,
+--                         pinSlots       = pinSlots s,
+--                         boss           = boss s,
+--                         random         = random s
+--                         }
+--   where
+--     oldContents = homeScreen s
 
 homeScreenSelect :: TuiState -> Int -> TuiState
 homeScreenSelect s dir =
@@ -321,6 +334,33 @@ userInput s guess =
 
     _ -> s
 
+
+-- initial idea for implementing the backspace feature to allow user to erase entered guesses
+-- conflict with current judging model
+
+-- back :: TuiState -> TuiState
+-- back s = 
+--   case screen s of
+--     2 -> case colIndex of
+--       0 -> s
+--       _ -> 
+--             TuiState
+--                 {
+--                   homeScreen     = homeScreen s,
+--                   screen         = screen s,
+--                   navSelect      = navSelect s,
+--                   gameState      = newGameState,
+--                   gameStateIndex = newGameStateIndex,
+--                   pinSlots       = newPinSlots,
+--                   boss           = boss s,
+--                   random         = random s
+--                 }
+--       where
+--         rowIndex     = fst (gameStateIndex s)
+--         colIndex     = snd (gameStateIndex s)
+--     _ -> s
+
+
 replaceList :: [a] -> Int -> a -> [a]
 replaceList s index target = fst splittedList ++ [target] ++ tail (snd splittedList)
   where splittedList = splitAt index s
@@ -331,16 +371,30 @@ handleTuiEvent s e =
     VtyEvent vtye ->
       case vtye of
         EvKey (KChar 'q')  [] -> halt s
-        EvKey KLeft        [] -> continue $ update s "←"
-        EvKey KRight       [] -> continue $ update s "→"
+        -- EvKey KLeft        [] -> continue $ update s "←"
+        -- EvKey KRight       [] -> continue $ update s "→"
         EvKey KUp          [] -> continue $ homeScreenSelect s 0
         EvKey KDown        [] -> continue $ homeScreenSelect s 1
         EvKey KEnter       [] -> continue $ toggle s
-        EvKey (KChar 'r')  [] -> continue $ userInput s red
-        EvKey (KChar 'b')  [] -> continue $ userInput s blue
-        EvKey (KChar 'g')  [] -> continue $ userInput s green
-        EvKey (KChar 'w')  [] -> continue $ userInput s white
-        EvKey (KChar 'p')  [] -> continue $ userInput s purple
-        EvKey (KChar 'y')  [] -> continue $ userInput s yellow
+        -- EvKey KBS          [] -> continue $ back s
+        EvKey (KChar 'r')  [] -> continue $ userInput s Lib.red
+        EvKey (KChar 'b')  [] -> continue $ userInput s Lib.blue
+        EvKey (KChar 'g')  [] -> continue $ userInput s Lib.green
+        EvKey (KChar 'w')  [] -> continue $ userInput s Lib.white
+        EvKey (KChar 'p')  [] -> continue $ userInput s Lib.purple
+        EvKey (KChar 'y')  [] -> continue $ userInput s Lib.yellow
         _                     -> continue s
     _ -> continue s
+
+
+theMap :: AttrMap
+theMap = attrMap V.defAttr
+        [
+          ("red", fg V.red)
+        , ("blue", fg V.blue)
+        , ("green", fg V.green)
+        , ("yellow", fg V.yellow)
+        , ("purple", fg V.magenta)
+        , ("white", fg V.white)
+        -- more TODO
+        ]
