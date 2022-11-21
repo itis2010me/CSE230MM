@@ -15,7 +15,6 @@ import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core (padLeftRight)
-import Control.Lens hiding (Empty)
 
 tui :: IO ()
 tui = do
@@ -33,12 +32,9 @@ data TuiState =
     , gameStateIndex :: (Int, Int)       -- current input pointer, rowIndex and colIndex
     , pinSlots       :: [[Slot]]         -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
     , boss           :: ([Slot], Bool)   -- guess for guessing player to guess
+    , random         :: [Slot]           -- randomly generated colors, used in 1 player mode
   }
   deriving (Show, Eq)
-
-controlT = [ "r - red", "b - blue", "g - green", "w - white"
-            , "p - purple", "y - yellow"]
-navControl = [ "↑/↓ - Navigation", "↩ - Select", "q - exit"]
 
 -- 10 rounds of guessing state for gameScreen
 -- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]
@@ -79,19 +75,21 @@ tuiApp =
     }
 
 buildInitialState :: IO TuiState
-buildInitialState =
+buildInitialState = do 
+    randomNum        <- randomGuess 4
     pure TuiState
-    { homeScreen     =    [ "  1 Player    "
-                          , "  2 Players   "
-                          , "DKAI vs player"
-                          ]
-    , screen         = 1
-    , navSelect      = 0
-    , gameState      = initialGS
-    , gameStateIndex = (9, 0)
-    , pinSlots       = initialRS
-    , boss           = ([Empty, Empty, Empty, Empty], False)
-    }
+      { homeScreen     =    [ "  1 Player    "
+                            , "  2 Players   "
+                            , "DKAI vs player"
+                            ]
+      , screen         = 1
+      , navSelect      = 0
+      , gameState      = initialGS
+      , gameStateIndex = (9, 0)
+      , pinSlots       = initialRS
+      , boss           = ([Empty, Empty, Empty, Empty], False)
+      , random         = intsToSlots randomNum
+      }
 
 drawTui :: TuiState -> [Widget ()]
 drawTui ts =
@@ -119,8 +117,8 @@ drawTui ts =
               bossUI       = drawBossUI (boss ts) gamePrompt
               gameUI       = C.vCenter $ C.hCenter (boxGuess <+> boxResult)
               mUI          = setAvailableSize (50, 25) (C.vCenter $ C.hCenter (bossUI <=> gameUI))
-              outUI        = (B.borderWithLabel (str "MasterMind") mUI <+> C.vCenter (C.hCenter controlBox))
-              gamePrompt   = if (((gameStateIndex ts) == (0, 3)) && (fst (head (gameState ts)) /= fst (boss ts)))
+              outUI        = C.vCenter $ C.hCenter (B.borderWithLabel (str "MasterMind") mUI <+> (controlBox))
+              gamePrompt   = if (((gameStateIndex ts) == ((-1), 0)) && (fst (head (gameState ts)) /= fst (boss ts)))
                              then "Failed!"
                              else "Success!"
         -- Player input solution screen
@@ -149,7 +147,7 @@ drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
     emptySpace = str "            "
 
 controlBox :: Widget ()
-controlBox = setAvailableSize (40, 25) (withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC))
+controlBox = setAvailableSize (50, 52) (withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC))
             where
               controlLabel = str "Controls"
               controls     = vBox $ map drawListElement controlT
@@ -194,7 +192,8 @@ update s ns = TuiState {homeScreen     = oldContents ++ [ns],
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
-                        boss           = boss s
+                        boss           = boss s,
+                        random         = random s
                         }
   where
     oldContents = homeScreen s
@@ -209,7 +208,8 @@ homeScreenSelect s dir =
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
-                        boss           = boss s
+                        boss           = boss s,
+                        random         = random s
                         }
             where
              newNavSelect = if (navSelect s) == 2 then 0 else (navSelect s) + 1
@@ -220,7 +220,8 @@ homeScreenSelect s dir =
                          gameState      = gameState s,
                          gameStateIndex = gameStateIndex s,
                          pinSlots       = pinSlots s,
-                         boss           = boss s
+                         boss           = boss s,
+                        random         = random s
                         }
             where
               newNavSelect = if (navSelect s) == 0 then 2 else (navSelect s) - 1
@@ -237,12 +238,16 @@ toggle s =
                   gameState      = gameState s,
                   gameStateIndex = gameStateIndex s,
                   pinSlots       = pinSlots s,
-                  boss           = boss s
+                  boss           = newBoss,
+                  random         = random s
                 }
       where
-          newScreen   = case (navSelect s) of
+          newScreen   = case navSelect s of
                           0 -> 2
                           _ -> 0
+          newBoss     = case navSelect s of
+                          0 -> (random s, False)
+                          _ -> boss s
     _ -> s
 
 userInput :: TuiState -> Slot -> TuiState
@@ -256,7 +261,8 @@ userInput s guess =
                   gameState      = gameState s,
                   gameStateIndex = gameStateIndex s,
                   pinSlots       = pinSlots s,
-                  boss           = newBoss
+                  boss           = newBoss,
+                  random         = random s
                 }
       where
         newBoss      = (newSlots, snd (boss s))
@@ -269,9 +275,9 @@ userInput s guess =
                        then existedSlots ++ (replicate emptyLength Empty)
                        else existedSlots
         emptyLength = 4 - (length existedSlots)
-    2 -> if (snd (boss s)) == True then s
+    2 -> if snd (boss s) == True then s
         else
-      TuiState
+            TuiState
                 {
                   homeScreen     = homeScreen s,
                   screen         = screen s,
@@ -279,7 +285,8 @@ userInput s guess =
                   gameState      = newGameState,
                   gameStateIndex = newGameStateIndex,
                   pinSlots       = newPinSlots,
-                  boss           = newBoss
+                  boss           = newBoss,
+                  random         = random s
                 }
       where
         newPinSlots  = if colIndex == 3
@@ -308,7 +315,7 @@ userInput s guess =
           | judgeResult == success            = (fst (boss s), True)
           | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
           | otherwise                         = boss s
-                  
+
 
     _ -> s
 

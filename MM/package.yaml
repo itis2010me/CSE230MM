@@ -37,8 +37,8 @@ library:
   source-dirs: src
   dependencies:
     - brick
-    - lens
     - vty
+    - random
 
 executables:
   MM-exe:
@@ -51,8 +51,8 @@ executables:
     dependencies:
     - MM
     - brick
-    - lens
     - vty
+    - random
 
 tests:
   MM-test:
@@ -65,5 +65,5 @@ tests:
     dependencies:
     - MM
     - brick
-    - lens
     - vty
+    - random
