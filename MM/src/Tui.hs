@@ -36,9 +36,9 @@ data TuiState =
   }
   deriving (Show, Eq)
 
-controlT = [ "q - exit", "r - red", "b - blue", "g - green", "w - white"
+controlT = [ "r - red", "b - blue", "g - green", "w - white"
             , "p - purple", "y - yellow"]
-navControl = [ "↑/↓ - Navigation", "↩ - Select"]
+navControl = [ "↑/↓ - Navigation", "↩ - Select", "q - exit"]
 
 -- 10 rounds of guessing state for gameScreen
 -- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]
@@ -116,10 +116,13 @@ drawTui ts =
               boxResult    = B.borderWithLabel labelResult insideResult
               insideResult = vBox $ map drawSlots (pinSlots ts)
               labelResult  = str "Result"
-              bossUI       = drawBossUI (boss ts) "Success!"
+              bossUI       = drawBossUI (boss ts) gamePrompt
               gameUI       = C.vCenter $ C.hCenter (boxGuess <+> boxResult)
               mUI          = setAvailableSize (50, 25) (C.vCenter $ C.hCenter (bossUI <=> gameUI))
               outUI        = (B.borderWithLabel (str "MasterMind") mUI <+> C.vCenter (C.hCenter controlBox))
+              gamePrompt   = if (((gameStateIndex ts) == (0, 3)) && (fst (head (gameState ts)) /= fst (boss ts)))
+                             then "Failed!"
+                             else "Success!"
         -- Player input solution screen
         -- 3  -> [intputUI]
         --     where
@@ -129,11 +132,11 @@ drawTui ts =
         --       homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
 
 drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
-drawBossUI (solution, show) label = bUI
+drawBossUI (solution, show) bossLabel = bUI
             where
               box    = B.borderWithLabel label inside
               inside = if show then drawSlots solution else hidden
-              label  = if show then str "Solution" else str "Boss"
+              label  = if show then str bossLabel else str "Boss"
               bUI    = C.vCenter $ C.hCenter box
               hidden = str " [X][X][X][X] "
 
@@ -146,7 +149,7 @@ drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
     emptySpace = str "            "
 
 controlBox :: Widget ()
-controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC)
+controlBox = setAvailableSize (40, 25) (withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC))
             where
               controlLabel = str "Controls"
               controls     = vBox $ map drawListElement controlT
@@ -156,13 +159,13 @@ drawHomeScreen :: [String] -> Int -> Int -> Widget ()
 drawHomeScreen [] _ _ = emptyWidget
 drawHomeScreen (x:xs) m n = current <=> rest
                         where
-                          current = if (m == n)
+                          current = if m == n
                                     then str "> " <+> str x <+> str " <"
                                     else str "  " <+> str x <+> str "  "
                           rest    = drawHomeScreen xs m (n + 1)
 
 drawListElement :: String -> Widget ()
-drawListElement s = padLeftRight 5 $ str s
+drawListElement s = padLeftRight 2 $ str s
 
 drawRow :: ([Slot], Int) -> Widget ()
 drawRow row = case snd row of
@@ -224,7 +227,7 @@ homeScreenSelect s dir =
     _ -> s
 
 toggle :: TuiState -> TuiState
-toggle s = 
+toggle s =
   case screen s of
     1 -> TuiState
                 {
@@ -266,7 +269,9 @@ userInput s guess =
                        then existedSlots ++ (replicate emptyLength Empty)
                        else existedSlots
         emptyLength = 4 - (length existedSlots)
-    2 -> TuiState
+    2 -> if (snd (boss s)) == True then s
+        else
+      TuiState
                 {
                   homeScreen     = homeScreen s,
                   screen         = screen s,
@@ -274,14 +279,16 @@ userInput s guess =
                   gameState      = newGameState,
                   gameStateIndex = newGameStateIndex,
                   pinSlots       = newPinSlots,
-                  boss           = boss s
+                  boss           = newBoss
                 }
       where
         newPinSlots  = if colIndex == 3
                        then replaceList (pinSlots s) rowIndex judgeResult
                        else pinSlots s
         newGameState = if colIndex == 3
-                       then replaceList (map f (gameState s)) newRowIndex newRow
+                       then if rowIndex <= 0
+                            then map f (gameState s)
+                            else replaceList (map f (gameState s)) newRowIndex newRow
                        else map f (gameState s)
         f row        = if snd row == 1 && colIndex == 3
                        then (replaceList (fst row) colIndex guess, 2)
@@ -296,7 +303,13 @@ userInput s guess =
         newRowIndex  = fst newGameStateIndex
         newRow       = ([Empty, Empty, Empty, Empty], 1)
         guessRow     = fst (head (snd (splitAt rowIndex newGameState)))
-        judgeResult  = masterJudge testSol guessRow
+        judgeResult  = masterJudge (fst(boss s)) guessRow
+        newBoss
+          | judgeResult == success            = (fst (boss s), True)
+          | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
+          | otherwise                         = boss s
+                  
+
     _ -> s
 
 replaceList :: [a] -> Int -> a -> [a]

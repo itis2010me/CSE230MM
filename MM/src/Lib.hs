@@ -41,6 +41,9 @@ testSol = [green, white, red, blue]
 testGuess :: [Slot]
 testGuess = [green, white, blue, red]
 
+success :: [Slot]
+success = [red, red, red, red]
+
 --        sol       guess                         output    output
 judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
 judge _ [] ns ng out = judgeW ns ng out
