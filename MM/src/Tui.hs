@@ -8,13 +8,14 @@ import Brick.Main
 import Brick.Types
 import Brick.Widgets.Core
 import Graphics.Vty.Input.Events
-import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize)
+import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom)
 import Brick.Widgets.Center (center)
 import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Brick.Widgets.Core (padLeftRight)
+import qualified Brick.Widgets.Center as C
 
 tui :: IO ()
 tui = do
@@ -105,8 +106,8 @@ drawTui ts =
             where
               box    = B.borderWithLabel label inside
               inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
-              label  = str "MasterMind"
-              homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
+              label  = str "Game Modes"
+              homeUI = drawTitle <=> (C.hCenter box) <=> (C.vCenter $ C.hCenter $ controlBox)
         2  -> [outUI]
             where
               boxGuess     = B.borderWithLabel labelGuess insideGuess
@@ -116,19 +117,12 @@ drawTui ts =
               insideResult = vBox $ map drawSlots (pinSlots ts)
               labelResult  = str "Result"
               bossUI       = drawBossUI (boss ts) gamePrompt
-              gameUI       = C.vCenter $ C.hCenter (boxGuess <+> boxResult)
-              mUI          = setAvailableSize (50, 25) (C.vCenter $ C.hCenter (bossUI <=> gameUI))
-              outUI        = C.vCenter $ C.hCenter (B.borderWithLabel (str "MasterMind") mUI <+> (controlBox))
+              gameUI       = padBottom (Pad 5) (C.vCenter $ C.hCenter (boxGuess <+> boxResult))
+              mUI          = (C.vCenter $ C.hCenter (bossUI <=> gameUI))
+              outUI        = C.vCenter $ C.hCenter (B.borderWithLabel (str "Game") mUI <+> (controlBox))
               gamePrompt   = if (((gameStateIndex ts) == ((-1), 0)) && (fst (head (gameState ts)) /= fst (boss ts)))
                              then "Failed!"
                              else "Success!"
-        -- Player input solution screen
-        -- 3  -> [intputUI]
-        --     where
-        --       box    = B.borderWithLabel label inside
-        --       inside = 
-        --       label  = str "MasterMind"
-        --       homeUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
 
 drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
 drawBossUI (solution, show) bossLabel = bUI
@@ -139,7 +133,14 @@ drawBossUI (solution, show) bossLabel = bUI
               bUI    = C.vCenter $ C.hCenter box
               hidden = str " [X][X][X][X] "
 
-
+drawTitle :: Widget ()
+drawTitle = padTopBottom 5 (C.hCenter (l1 <=> l2 <=> l3 <=> l4 <=> l5))
+  where
+    l1 = str s1
+    l2 = str s2
+    l3 = str s3
+    l4 = str s4
+    l5 = str s5
 
 drawInputScreen :: ([Slot], Bool) -> Widget ()
 drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
@@ -213,7 +214,7 @@ homeScreenSelect s dir =
                         random         = random s
                         }
             where
-             newNavSelect = if (navSelect s) == 2 then 0 else (navSelect s) + 1
+             newNavSelect = if navSelect s == 2 then 0 else navSelect s + 1
 
           _ -> TuiState {homeScreen     = homeScreen s,
                          screen         = screen s,
@@ -225,7 +226,7 @@ homeScreenSelect s dir =
                         random         = random s
                         }
             where
-              newNavSelect = if (navSelect s) == 0 then 2 else (navSelect s) - 1
+              newNavSelect = if navSelect s == 0 then 2 else navSelect s - 1
     _ -> s
 
 toggle :: TuiState -> TuiState
@@ -321,7 +322,7 @@ userInput s guess =
     _ -> s
 
 replaceList :: [a] -> Int -> a -> [a]
-replaceList s index target = (fst splittedList) ++ [target] ++ (tail (snd splittedList))
+replaceList s index target = fst splittedList ++ [target] ++ tail (snd splittedList)
   where splittedList = splitAt index s
 
 handleTuiEvent :: TuiState -> BrickEvent n e -> EventM n (Next TuiState)
@@ -330,11 +331,11 @@ handleTuiEvent s e =
     VtyEvent vtye ->
       case vtye of
         EvKey (KChar 'q')  [] -> halt s
-        EvKey (KLeft)      [] -> continue $ update s "←"
-        EvKey (KRight)     [] -> continue $ update s "→"
-        EvKey (KUp)        [] -> continue $ homeScreenSelect s 0
-        EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
-        EvKey (KEnter)     [] -> continue $ toggle s
+        EvKey KLeft        [] -> continue $ update s "←"
+        EvKey KRight       [] -> continue $ update s "→"
+        EvKey KUp          [] -> continue $ homeScreenSelect s 0
+        EvKey KDown        [] -> continue $ homeScreenSelect s 1
+        EvKey KEnter       [] -> continue $ toggle s
         EvKey (KChar 'r')  [] -> continue $ userInput s red
         EvKey (KChar 'b')  [] -> continue $ userInput s blue
         EvKey (KChar 'g')  [] -> continue $ userInput s green
