@@ -96,9 +96,12 @@ buildInitialState =
 drawTui :: TuiState -> [Widget ()]
 drawTui ts =
     case screen ts of
-        0  -> [vBox $ map f [last (homeScreen ts)]]
+        0  -> [inputUI]
             where
-                f    = str
+                box     = B.borderWithLabel label inside
+                inside  = drawInputScreen (boss ts)
+                label   = str "Please Input Color"
+                inputUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
         1  -> [homeUI]
             where
               box    = B.borderWithLabel label inside
@@ -135,6 +138,12 @@ drawBossUI (solution, show) label = bUI
               hidden = str " [X][X][X][X] "
 
 
+
+drawInputScreen :: ([Slot], Bool) -> Widget ()
+drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
+  where
+    rowUI      = drawSlots (fst row)
+    emptySpace = str "            "
 
 controlBox :: Widget ()
 controlBox = withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC)
@@ -215,22 +224,48 @@ homeScreenSelect s dir =
     _ -> s
 
 toggle :: TuiState -> TuiState
-toggle s = TuiState
-                    {
-                      homeScreen     = homeScreen s,
-                      screen         = newScreen,
-                      navSelect      = navSelect s,
-                      gameState      = gameState s,
-                      gameStateIndex = gameStateIndex s,
-                      pinSlots       = pinSlots s,
-                      boss           = boss s
-                    }
-            where
-                newScreen   = mod ((screen s) + 1) 3
-
-gameScreenSelect :: TuiState -> Slot -> TuiState
-gameScreenSelect s guess =
+toggle s = 
   case screen s of
+    1 -> TuiState
+                {
+                  homeScreen     = homeScreen s,
+                  screen         = newScreen,
+                  navSelect      = navSelect s,
+                  gameState      = gameState s,
+                  gameStateIndex = gameStateIndex s,
+                  pinSlots       = pinSlots s,
+                  boss           = boss s
+                }
+      where
+          newScreen   = case (navSelect s) of
+                          0 -> 2
+                          _ -> 0
+    _ -> s
+
+userInput :: TuiState -> Slot -> TuiState
+userInput s guess =
+  case screen s of
+    0 -> TuiState
+                {
+                  homeScreen     = homeScreen s,
+                  screen         = newScreen,
+                  navSelect      = navSelect s,
+                  gameState      = gameState s,
+                  gameStateIndex = gameStateIndex s,
+                  pinSlots       = pinSlots s,
+                  boss           = newBoss
+                }
+      where
+        newBoss      = (newSlots, snd (boss s))
+        oldSlots     = fst (boss s)
+        existedSlots = filter (\x -> x /= Empty) oldSlots ++ [guess]
+        newScreen    = if (emptyLength <= 0)
+                       then 2
+                       else (screen s)
+        newSlots     = if (emptyLength > 0)
+                       then existedSlots ++ (replicate emptyLength Empty)
+                       else existedSlots
+        emptyLength = 4 - (length existedSlots)
     2 -> TuiState
                 {
                   homeScreen     = homeScreen s,
@@ -279,11 +314,11 @@ handleTuiEvent s e =
         EvKey (KUp)        [] -> continue $ homeScreenSelect s 0
         EvKey (KDown)      [] -> continue $ homeScreenSelect s 1
         EvKey (KEnter)     [] -> continue $ toggle s
-        EvKey (KChar 'r')  [] -> continue $ gameScreenSelect s red
-        EvKey (KChar 'b')  [] -> continue $ gameScreenSelect s blue
-        EvKey (KChar 'g')  [] -> continue $ gameScreenSelect s green
-        EvKey (KChar 'w')  [] -> continue $ gameScreenSelect s white
-        EvKey (KChar 'p')  [] -> continue $ gameScreenSelect s purple
-        EvKey (KChar 'y')  [] -> continue $ gameScreenSelect s yellow
+        EvKey (KChar 'r')  [] -> continue $ userInput s red
+        EvKey (KChar 'b')  [] -> continue $ userInput s blue
+        EvKey (KChar 'g')  [] -> continue $ userInput s green
+        EvKey (KChar 'w')  [] -> continue $ userInput s white
+        EvKey (KChar 'p')  [] -> continue $ userInput s purple
+        EvKey (KChar 'y')  [] -> continue $ userInput s yellow
         _                     -> continue s
     _ -> continue s
