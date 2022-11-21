@@ -76,7 +76,8 @@ tuiApp =
 
 buildInitialState :: IO TuiState
 buildInitialState = do 
-    randomNum        <- randomGuess 4
+    randomNum        <- randomSingleGuess 4
+    
     pure TuiState
       { homeScreen     =    [ "  1 Player    "
                             , "  2 Players   "

@@ -1,5 +1,6 @@
 module Lib where
 
+import Data.List
 import System.Random
 
 data Slot
@@ -68,6 +69,16 @@ intsToSlots = map zTs
 -- random list of numbers between 0-5
 randomGuess :: Int -> IO [Int]
 randomGuess n = sequence $ replicate n $ randomRIO (0,5::Int)
+
+randomSingleGuess :: Int -> IO [Int]
+randomSingleGuess n = do
+                        res <- randomGuess n
+                        if hasDuplicate res
+                          then randomSingleGuess n
+                          else return res
+
+hasDuplicate :: [Int] -> Bool
+hasDuplicate xs = length (nub xs) /= length xs
 
 --        sol       guess                         output    output
 judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
