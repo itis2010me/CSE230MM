@@ -51,7 +51,7 @@ controlT :: [String]
 controlT = [ "r - red", "b - blue", "g - green", "w - white"
             , "p - purple", "y - yellow"]
 navControl :: [String]
-navControl = [ "↑/↓ - Navigation", "↩ - Select", "q - exit"]
+navControl = [ "↑/↓ - Navigation", "↩ - Select", "⟵ - remove", "q - exit"]
 
 -- integer to Slot
 zTs :: Int -> Slot

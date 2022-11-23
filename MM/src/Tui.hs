@@ -12,7 +12,7 @@ import qualified Graphics.Vty as V
 import Brick.Util
 import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom, withAttr)
 import Brick.Widgets.Center (center)
-import Brick.Widgets.Border (borderWithLabel, vBorder)
+-- import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
@@ -196,22 +196,9 @@ drawSlots ((Guess c):xs) = setColorF (str slotColor) <+>rest
                                     White -> withAttr "white"
                                     Purple -> withAttr "purple"
                                     Yellow -> withAttr "yellow"
-                                    _      -> id
                         slotColor = "[" ++ show c ++ "]"
                         rest      = drawSlots xs
 
--- update :: TuiState -> String -> TuiState
--- update s ns = TuiState {homeScreen     = oldContents ++ [ns],
---                         screen         = screen s,
---                         navSelect      = navSelect s,
---                         gameState      = gameState s,
---                         gameStateIndex = gameStateIndex s,
---                         pinSlots       = pinSlots s,
---                         boss           = boss s,
---                         random         = random s
---                         }
---   where
---     oldContents = homeScreen s
 
 homeScreenSelect :: TuiState -> Int -> TuiState
 homeScreenSelect s dir =
@@ -242,9 +229,10 @@ homeScreenSelect s dir =
               newNavSelect = if navSelect s == 0 then 2 else navSelect s - 1
     _ -> s
 
-toggle :: TuiState -> TuiState
-toggle s =
+select :: TuiState -> TuiState
+select s =
   case screen s of
+    -- Home screen
     1 -> TuiState
                 {
                   homeScreen     = homeScreen s,
@@ -263,6 +251,40 @@ toggle s =
           newBoss     = case navSelect s of
                           0 -> (random s, False)
                           _ -> boss s
+
+    -- Game screen
+    2 -> if rowIndex < 0 || colIndex /= 4 then s
+         else
+            TuiState
+                {
+                  homeScreen     = homeScreen s,
+                  screen         = screen s,
+                  navSelect      = navSelect s,
+                  gameState      = newGameState,
+                  gameStateIndex = newGameStateIndex,
+                  pinSlots       = newPinSlots,
+                  boss           = newBoss,
+                  random         = random s
+                }
+
+      where
+        rowIndex          = fst (gameStateIndex s)
+        colIndex          = snd (gameStateIndex s)
+        newGameStateIndex = (rowIndex - 1, 0)
+        newRowIndex       = fst newGameStateIndex
+        -- replace current row with ([Slot], 1) -> ([Slot], 2)
+        newGameState1     = replaceList (gameState s) rowIndex (guessRow, 2)
+        newGameState      = if newRowIndex == (-1) then newGameState1
+                            else replaceList newGameState1 newRowIndex emptyRow
+        newPinSlots       = replaceList (pinSlots s) rowIndex judgeResult
+        guessRow          = fst (gameState s !! max 0 rowIndex)
+        judgeResult       = masterJudge (fst(boss s)) guessRow
+        newBoss
+          | judgeResult == success            = (fst (boss s), True)
+          | newRowIndex == (-1)               = (fst (boss s), True) -- if used up all slots
+          | otherwise                         = boss s
+        emptyRow          = ([Empty, Empty, Empty, Empty], 1)
+
     _ -> s
 
 userInput :: TuiState -> Slot -> TuiState
@@ -290,8 +312,10 @@ userInput s guess =
                        then existedSlots ++ (replicate emptyLength Empty)
                        else existedSlots
         emptyLength = 4 - (length existedSlots)
-    2 -> if snd (boss s) == True then s
-        else
+
+        -- if already won or already inputed 4 guesses, no state change
+    2 -> if snd (boss s) || snd (gameStateIndex s) > 3 then s
+         else
             TuiState
                 {
                   homeScreen     = homeScreen s,
@@ -299,38 +323,42 @@ userInput s guess =
                   navSelect      = navSelect s,
                   gameState      = newGameState,
                   gameStateIndex = newGameStateIndex,
-                  pinSlots       = newPinSlots,
-                  boss           = newBoss,
+                  pinSlots       = pinSlots s,
+                  boss           = boss s,
                   random         = random s
                 }
       where
-        newPinSlots  = if colIndex == 3
-                       then replaceList (pinSlots s) rowIndex judgeResult
-                       else pinSlots s
-        newGameState = if colIndex == 3
-                       then if rowIndex <= 0
-                            then map f (gameState s)
-                            else replaceList (map f (gameState s)) newRowIndex newRow
-                       else map f (gameState s)
-        f row        = if snd row == 1 && colIndex == 3
-                       then (replaceList (fst row) colIndex guess, 2)
-                       else if snd row == 1 && colIndex /= 3
-                       then (replaceList (fst row) colIndex guess, 1)
-                       else row
-        newGameStateIndex = if colIndex == 3
-                            then (rowIndex - 1, 0) -- rowIndex starts at 9, decrement to move up
+        -- newPinSlots  = if colIndex == 3
+        --                then replaceList (pinSlots s) rowIndex judgeResult
+        --                else pinSlots s
+        -- newGameState = if colIndex == 3
+        --                then if rowIndex <= 0
+        --                     then map f (gameState s)
+        --                     else replaceList (map f (gameState s)) newRowIndex newRow
+        --                else map f (gameState s)
+        newGameState = if colIndex > 3
+                        then gameState s
+                        else map f (gameState s)
+        f row
+        -- | snd row == 1 && colIndex == 3 = (replaceList (fst row) colIndex guess, 2)
+          | snd row == 1 && colIndex <= 3 = (replaceList (fst row) colIndex guess, 1)
+          | otherwise = row
+        -- newGameStateIndex = if colIndex == 3
+        --                     then (rowIndex - 1, 0) -- rowIndex starts at 9, decrement to move up
+        --                     else (rowIndex, colIndex + 1)
+        newGameStateIndex = if colIndex > 3
+                            then gameStateIndex s
                             else (rowIndex, colIndex + 1)
         rowIndex     = fst (gameStateIndex s)
         colIndex     = snd (gameStateIndex s)
-        newRowIndex  = fst newGameStateIndex
-        newRow       = ([Empty, Empty, Empty, Empty], 1)
-        guessRow     = fst (head (snd (splitAt rowIndex newGameState)))
-        judgeResult  = masterJudge (fst(boss s)) guessRow
-        newBoss
-          | judgeResult == success            = (fst (boss s), True)
-          | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
-          | otherwise                         = boss s
-
+        -- newRowIndex  = fst newGameStateIndex
+        -- newRow       = ([Empty, Empty, Empty, Empty], 1)
+        -- guessRow     = fst (head (snd (splitAt rowIndex newGameState)))
+        -- judgeResult  = masterJudge (fst(boss s)) guessRow
+        -- newBoss
+        --   | judgeResult == success            = (fst (boss s), True)
+        --   | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
+        --   | otherwise                         = boss s
 
     _ -> s
 
@@ -338,27 +366,32 @@ userInput s guess =
 -- initial idea for implementing the backspace feature to allow user to erase entered guesses
 -- conflict with current judging model
 
--- back :: TuiState -> TuiState
--- back s = 
---   case screen s of
---     2 -> case colIndex of
---       0 -> s
---       _ -> 
---             TuiState
---                 {
---                   homeScreen     = homeScreen s,
---                   screen         = screen s,
---                   navSelect      = navSelect s,
---                   gameState      = newGameState,
---                   gameStateIndex = newGameStateIndex,
---                   pinSlots       = newPinSlots,
---                   boss           = boss s,
---                   random         = random s
---                 }
---       where
---         rowIndex     = fst (gameStateIndex s)
---         colIndex     = snd (gameStateIndex s)
---     _ -> s
+back :: TuiState -> TuiState
+back s =
+  case screen s of
+    2 -> case colIndex of
+      0 -> s
+      _ ->
+            TuiState
+                {
+                  homeScreen     = homeScreen s,
+                  screen         = screen s,
+                  navSelect      = navSelect s,
+                  gameState      = newGameState,
+                  gameStateIndex = newGameStateIndex,
+                  pinSlots       = pinSlots s,
+                  boss           = boss s,
+                  random         = random s
+                }
+      where
+        rowIndex          = fst (gameStateIndex s)
+        colIndex          = snd (gameStateIndex s)
+        newGameStateIndex = (rowIndex, colIndex - 1)
+        newGameState      = map f (gameState s)
+        f row
+          | snd row == 1 && colIndex > 0 = (replaceList (fst row) (colIndex - 1) Lib.Empty, 1)
+          | otherwise = row
+    _ -> s
 
 
 replaceList :: [a] -> Int -> a -> [a]
@@ -375,8 +408,8 @@ handleTuiEvent s e =
         -- EvKey KRight       [] -> continue $ update s "→"
         EvKey KUp          [] -> continue $ homeScreenSelect s 0
         EvKey KDown        [] -> continue $ homeScreenSelect s 1
-        EvKey KEnter       [] -> continue $ toggle s
-        -- EvKey KBS          [] -> continue $ back s
+        EvKey KEnter       [] -> continue $ select s
+        EvKey KBS          [] -> continue $ back s
         EvKey (KChar 'r')  [] -> continue $ userInput s Lib.red
         EvKey (KChar 'b')  [] -> continue $ userInput s Lib.blue
         EvKey (KChar 'g')  [] -> continue $ userInput s Lib.green

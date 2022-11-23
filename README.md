@@ -17,14 +17,13 @@ _/      _/   _/  _/    _/    _/_/_/
 Our application is based on the game "MasterMind". 
 
 ## [Classic MasterMind Game](https://en.wikipedia.org/wiki/Mastermind_(board_game))
-This game aims to guess the correct sequence of colors in 4 positions. We will have two players, one player guess and one player provide the colors and the positions of the 4 pegs. For example, the answer could be blue, red, yellow, green and the player needs to guess both the color and the order correctly. There will be 6 colors available. The guesser will guess 10 rounds and each round the player would know extra information about the answer based on the current guess.
+This game aims to guess the correct sequence of colors in 4 positions. We will have two players, one player guesses and one player provides the colors and the positions of the 4 pegs. For example, the answer could be blue, red, yellow, green and the player needs to guess both the color and the order correctly. There will be 6 colors available. The guesser will guess up to 10 rounds and each round the player would know extra information about the answer based on the current guess.
 
 ## Application Architecture
 ```haskell
 data Slot
   = Empty
   | Guess PinColor
-  deriving (Show, Eq)
 
 data PinColor
   = Red
@@ -33,7 +32,6 @@ data PinColor
   | White
   | Purple
   | Yellow
-  deriving (Eq)
 ```
 ### Game State
 ```haskell
@@ -83,8 +81,8 @@ TuiState
 - Implementation for 2 Players game mode. [Done]
 
 ### G3 (Milestone 3)
-- TUI optimization with colored pegs.
-- TUI navigation and control optimizations.
+- TUI optimization with colored pegs. [Done]
+- TUI navigation and control optimizations. [Done]
 
 ### G4
 - Implementation for the AI player game mode.
@@ -95,9 +93,6 @@ TuiState
         - Allow/disallow duplicate pins in hidden pegs. 
 
 
-
-
-
 ## Collaborator
 - Chufan Wu
 - Yuan Chang
@@ -105,4 +100,4 @@ TuiState
 - Siran Ma
 
 ### History
-Last edit Nov 21, 2022
+Last edit Nov 22, 2022
