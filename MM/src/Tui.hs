@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Tui where
+module Tui (module Tui) where
 
 import Lib
 
@@ -10,20 +10,21 @@ import Brick.Widgets.Core
 import Graphics.Vty.Input.Events
 import qualified Graphics.Vty as V
 import Brick.Util
-import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom, withAttr)
-import Brick.Widgets.Center (center)
+-- import Brick
+-- import Brick (Widget, simpleMain, (<+>), str, withBorderStyle, joinBorders, emptyWidget, vBox, setAvailableSize, padTopBottom, withAttr)
+-- import Brick.Widgets.Center (center)
 -- import Brick.Widgets.Border (borderWithLabel, vBorder)
 import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
-import Brick.Widgets.Core (padLeftRight)
-import qualified Brick.Widgets.Center as C
+-- import Brick.Widgets.Core (padLeftRight)
+-- import qualified Brick.Widgets.Center as C
 
 tui :: IO ()
 tui = do
   initialState <- buildInitialState
   endState <- defaultMain tuiApp initialState
-  print "Done"
+  print endState
 
 -- MM State
 data TuiState =
@@ -113,7 +114,7 @@ drawTui ts =
               inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
               label  = str "Game Modes"
               homeUI = drawTitle <=> (C.hCenter box) <=> (C.vCenter $ C.hCenter $ controlBox)
-        2  -> [outUI]
+        _  -> [outUI]
             where
               boxGuess     = B.borderWithLabel labelGuess insideGuess
               insideGuess  = vBox $ map drawRow (gameState ts)
@@ -130,11 +131,11 @@ drawTui ts =
                              else "Success!"
 
 drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
-drawBossUI (solution, show) bossLabel = bUI
+drawBossUI (solution, showSol) bossLabel = bUI
             where
               box    = B.borderWithLabel label inside
-              inside = if show then drawSlots solution else hidden
-              label  = if show then str bossLabel else str "Boss"
+              inside = if showSol then drawSlots solution else hidden
+              label  = if showSol then str bossLabel else str "Boss"
               bUI    = C.vCenter $ C.hCenter box
               hidden = str " [X][X][X][X] "
 
@@ -199,6 +200,19 @@ drawSlots ((Guess c):xs) = setColorF (str slotColor) <+>rest
                         slotColor = "[" ++ show c ++ "]"
                         rest      = drawSlots xs
 
+-- initial idea about drawing the pins differently
+-- drawPins :: [Slot] -> Widget ()
+-- drawPins []             = emptyWidget
+-- drawPins (Empty:xs)     = str "[ ]" <+> rest
+--                       where
+--                         rest      = drawSlots xs
+-- drawPins ((Guess c):xs) = pin <+> rest
+--                       where
+--                         setColorF c = case c of
+--                                     Red -> withAttr "redPin" (str "⦿")
+--                                     White -> withAttr "whitePin" (str "⦾")
+--                         pin         = str "[" <+> setColorF c <+> str "]"
+--                         rest        = drawSlots xs 
 
 homeScreenSelect :: TuiState -> Int -> TuiState
 homeScreenSelect s dir =
@@ -362,10 +376,7 @@ userInput s guess =
 
     _ -> s
 
-
--- initial idea for implementing the backspace feature to allow user to erase entered guesses
--- conflict with current judging model
-
+-- KBS button
 back :: TuiState -> TuiState
 back s =
   case screen s of
@@ -429,5 +440,6 @@ theMap = attrMap V.defAttr
         , ("yellow", fg V.yellow)
         , ("purple", fg V.magenta)
         , ("white", fg V.white)
-        -- more TODO
+        , ("redPin", bg V.red)
+        , ("whitePin", bg V.white)
         ]
