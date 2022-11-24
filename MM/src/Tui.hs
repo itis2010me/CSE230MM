@@ -299,29 +299,49 @@ select s =
           | otherwise                         = boss s
         emptyRow          = ([Empty, Empty, Empty, Empty], 1)
 
+    -- just switch to screen 2 if ready
+    0 -> if emptyLength /= 0 then s
+          else
+            TuiState
+                      {
+                        homeScreen     = homeScreen s,
+                        screen         = 2,
+                        navSelect      = navSelect s,
+                        gameState      = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots       = pinSlots s,
+                        boss           = boss s,
+                        random         = random s
+                      }
+      where
+        oldSlots     = fst (boss s)
+        existedSlots = filter (/= Lib.Empty) oldSlots
+        emptyLength = 4 - length existedSlots
     _ -> s
 
 userInput :: TuiState -> Slot -> TuiState
 userInput s guess =
   case screen s of
-    0 -> TuiState
-                {
-                  homeScreen     = homeScreen s,
-                  screen         = newScreen,
-                  navSelect      = navSelect s,
-                  gameState      = gameState s,
-                  gameStateIndex = gameStateIndex s,
-                  pinSlots       = pinSlots s,
-                  boss           = newBoss,
-                  random         = random s
-                }
+    0 -> if emptyLength < 0 then s
+          else
+            TuiState
+                      {
+                        homeScreen     = homeScreen s,
+                        screen         = screen s,
+                        navSelect      = navSelect s,
+                        gameState      = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots       = pinSlots s,
+                        boss           = newBoss,
+                        random         = random s
+                      }
       where
         newBoss      = (newSlots, snd (boss s))
         oldSlots     = fst (boss s)
         existedSlots = filter (\x -> x /= Empty) oldSlots ++ [guess]
-        newScreen    = if (emptyLength <= 0)
-                       then 2
-                       else (screen s)
+        -- newScreen    = if (emptyLength <= 0)
+        --                then 2
+        --                else (screen s)
         newSlots     = if (emptyLength > 0)
                        then existedSlots ++ (replicate emptyLength Empty)
                        else existedSlots
@@ -402,6 +422,27 @@ back s =
         f row
           | snd row == 1 && colIndex > 0 = (replaceList (fst row) (colIndex - 1) Lib.Empty, 1)
           | otherwise = row
+    
+    0 -> if emptyLength == 4 then s
+          else
+              TuiState
+                    {
+                      homeScreen     = homeScreen s,
+                      screen         = screen s,
+                      navSelect      = navSelect s,
+                      gameState      = gameState s,
+                      gameStateIndex = gameStateIndex s,
+                      pinSlots       = pinSlots s,
+                      boss           = newBoss,
+                      random         = random s
+                    }
+      where
+        newBoss      = (newSlots, snd (boss s))
+        oldSlots     = fst (boss s)
+        existedSlots = filter (/= Empty) oldSlots
+        newSlots     = replaceList oldSlots index Lib.Empty
+        index        = 4 - emptyLength - 1
+        emptyLength = 4 - length existedSlots
     _ -> s
 
 
