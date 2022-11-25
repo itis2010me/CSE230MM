@@ -23,50 +23,23 @@ import qualified Brick.Widgets.Center as C
 tui :: IO ()
 tui = do
   initialState <- buildInitialState
-  endState <- defaultMain tuiApp initialState
-  print endState
+  _ <- defaultMain tuiApp initialState
+  print ("Done." :: String)
 
 -- MM State
 data TuiState =
   TuiState
   {   homeScreen     :: [String]         -- there are 3 modes for homeScreen, ["1 Player", "2 Players", "DKAI vs player"]
     , navSelect      :: Int              -- index for homeScreen to choose different modes, [0: "1 Player", 1: "2 Players", 2: "DKAI vs player"]
-    , screen         :: Int              -- 0: ?, 1: homeScreen, 2: gameScreen
+    , screen         :: Int              -- 0: userInput, 1: homeScreen, 2: gameScreen, 3: AI game, 4: userInput for AI game
     , gameState      :: [([Slot], Int)]  -- 10 rounds of guessing state for gameScreen
     , gameStateIndex :: (Int, Int)       -- current input pointer, rowIndex and colIndex
     , pinSlots       :: [[Slot]]         -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
     , boss           :: ([Slot], Bool)   -- guess for guessing player to guess
     , random         :: [Slot]           -- randomly generated colors, used in 1 player mode
+    , aiSearchSpace  :: [[Slot]]         -- DKAI algorithm's solution search space
   }
   deriving (Show, Eq)
-
--- 10 rounds of guessing state for gameScreen
--- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]
-initialGS :: [([Slot], Int)]
-initialGS = [ ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 0)
-            , ([Empty, Empty, Empty, Empty], 1)
-            ]
-
-initialRS :: [[Slot]]
-initialRS = [ [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            , [Empty, Empty, Empty, Empty]
-            ]
 
 tuiApp :: App TuiState e ()
 tuiApp =
@@ -76,9 +49,6 @@ tuiApp =
     , appHandleEvent  = handleTuiEvent
     , appStartEvent   = pure
     , appAttrMap      = const theMap
-    -- , appAttrMap      = const $ attrMap mempty [ ("red", fg V.red)
-    --                                           , ("blue", V.blue `on` V.blue)
-    --                                           ]
     }
 
 buildInitialState :: IO TuiState
@@ -95,8 +65,9 @@ buildInitialState = do
       , gameState      = initialGS
       , gameStateIndex = (9, 0)
       , pinSlots       = initialRS
-      , boss           = ([Empty, Empty, Empty, Empty], False)
+      , boss           = initialBoss
       , random         = intsToSlots randomNum
+      , aiSearchSpace  = searchS
       }
 
 drawTui :: TuiState -> [Widget ()]
@@ -114,7 +85,7 @@ drawTui ts =
               inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
               label  = str "Game Modes"
               homeUI = drawTitle <=> (C.hCenter box) <=> (C.vCenter $ C.hCenter $ controlBox)
-        _  -> [outUI]
+        2  -> [outUI]
             where
               boxGuess     = B.borderWithLabel labelGuess insideGuess
               insideGuess  = vBox $ map drawRow (gameState ts)
@@ -129,6 +100,28 @@ drawTui ts =
               gamePrompt   = if (((gameStateIndex ts) == ((-1), 0)) && (fst (head (gameState ts)) /= fst (boss ts)))
                              then "Failed!"
                              else "Success!"
+        3  -> [aiUI]
+            where
+              boxGuess     = B.borderWithLabel labelGuess insideGuess
+              insideGuess  = vBox $ map drawRow (gameState ts)
+              labelGuess   = str "Guess"
+              boxResult    = B.borderWithLabel labelResult insideResult
+              insideResult = vBox $ map drawSlots (pinSlots ts)
+              labelResult  = str "Result"
+              bossUI       = drawBossUI (boss ts) gamePrompt
+              gameUI       = padBottom (Pad 5) (C.vCenter $ C.hCenter (boxGuess <+> boxResult))
+              mUI          = (C.vCenter $ C.hCenter (bossUI <=> gameUI))
+              aiUI         = C.vCenter $ C.hCenter (B.borderWithLabel (str "Game") mUI <+> (controlBox))
+              gamePrompt   = if (((gameStateIndex ts) == ((-1), 0)) && (fst (head (gameState ts)) /= fst (boss ts)))
+                             then "Failed!"
+                             else "Success!"
+        -- screen 4
+        _  -> [aiInputUI]
+            where
+                box       = B.borderWithLabel label inside
+                inside    = drawInputScreen (boss ts)
+                label     = str "Please Input Color for DKAI"
+                aiInputUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
 
 drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
 drawBossUI (solution, showSol) bossLabel = bUI
@@ -218,26 +211,30 @@ homeScreenSelect :: TuiState -> Int -> TuiState
 homeScreenSelect s dir =
   case screen s of
     1 -> case dir of
-          1 -> TuiState {homeScreen    = homeScreen s,
+          1 -> TuiState {
+                        homeScreen    = homeScreen s,
                         screen         = screen s,
                         navSelect      = newNavSelect,
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
                         boss           = boss s,
-                        random         = random s
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
                         }
             where
              newNavSelect = if navSelect s == 2 then 0 else navSelect s + 1
 
-          _ -> TuiState {homeScreen     = homeScreen s,
-                         screen         = screen s,
-                         navSelect      = newNavSelect,
-                         gameState      = gameState s,
-                         gameStateIndex = gameStateIndex s,
-                         pinSlots       = pinSlots s,
-                         boss           = boss s,
-                        random         = random s
+          _ -> TuiState {
+                        homeScreen     = homeScreen s,
+                        screen         = screen s,
+                        navSelect      = newNavSelect,
+                        gameState      = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots       = pinSlots s,
+                        boss           = boss s,
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
                         }
             where
               newNavSelect = if navSelect s == 0 then 2 else navSelect s - 1
@@ -256,12 +253,14 @@ select s =
                   gameStateIndex = gameStateIndex s,
                   pinSlots       = pinSlots s,
                   boss           = newBoss,
-                  random         = random s
+                  random         = random s,
+                  aiSearchSpace  = aiSearchSpace s
                 }
       where
           newScreen   = case navSelect s of
-                          0 -> 2
-                          _ -> 0
+                          0 -> 2 -- 1 player -> gameScreen(2)
+                          1 -> 0 -- 2 players -> player 1 input screen(0)
+                          _ -> 4 -- DKAI mode -> player 1 input AI screen (4)
           newBoss     = case navSelect s of
                           0 -> (random s, False)
                           _ -> boss s
@@ -278,7 +277,8 @@ select s =
                   gameStateIndex = newGameStateIndex,
                   pinSlots       = newPinSlots,
                   boss           = newBoss,
-                  random         = random s
+                  random         = random s,
+                  aiSearchSpace  = aiSearchSpace s
                 }
 
       where
@@ -311,13 +311,63 @@ select s =
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
                         boss           = boss s,
-                        random         = random s
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
                       }
       where
         oldSlots     = fst (boss s)
         existedSlots = filter (/= Lib.Empty) oldSlots
         emptyLength = 4 - length existedSlots
-    _ -> s
+
+    -- AI mode selection
+    3 -> if snd (boss s) then s
+          else
+            TuiState
+                      {
+                        homeScreen     = homeScreen s,
+                        screen         = screen s,
+                        navSelect      = navSelect s,
+                        gameState      = newGameState,
+                        gameStateIndex = newGameStateIndex,
+                        pinSlots       = newPinSlots,
+                        boss           = newBoss,
+                        random         = random s,
+                        aiSearchSpace  = newSearchSpace
+                      }
+      where
+        rowIndex           = fst (gameStateIndex s)
+        newRowIndex        = fst newGameStateIndex
+        newGameState       = replaceList (replaceList (gameState s) rowIndex (aiGuess, 2)) newRowIndex emptyRow
+        newGameStateIndex  = (rowIndex - 1, 0)
+        judgeResult        = masterJudge (fst(boss s)) aiGuess
+        newPinSlots        = replaceList (pinSlots s) rowIndex judgeResult
+        newSearchSpace     = dkSearch (aiSearchSpace s) aiGuess judgeResult
+        aiGuess            = head (aiSearchSpace s)
+        newBoss
+          | judgeResult == success            = (fst (boss s), True)
+          | newRowIndex == (-1)               = (fst (boss s), True) -- if used up all slots
+          | otherwise                         = boss s
+        emptyRow           = ([Empty, Empty, Empty, Empty], 1)
+
+    -- screen 4
+    _ -> if emptyLength /= 0 then s
+          else
+            TuiState
+                      {
+                        homeScreen     = homeScreen s,
+                        screen         = 3,
+                        navSelect      = navSelect s,
+                        gameState      = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots       = pinSlots s,
+                        boss           = boss s,
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
+                      }
+      where
+        oldSlots     = fst (boss s)
+        existedSlots = filter (/= Lib.Empty) oldSlots
+        emptyLength = 4 - length existedSlots
 
 userInput :: TuiState -> Slot -> TuiState
 userInput s guess =
@@ -333,19 +383,20 @@ userInput s guess =
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
                         boss           = newBoss,
-                        random         = random s
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
                       }
       where
         newBoss      = (newSlots, snd (boss s))
         oldSlots     = fst (boss s)
-        existedSlots = filter (\x -> x /= Empty) oldSlots ++ [guess]
+        existedSlots = filter (/= Empty) oldSlots ++ [guess]
         -- newScreen    = if (emptyLength <= 0)
         --                then 2
         --                else (screen s)
-        newSlots     = if (emptyLength > 0)
-                       then existedSlots ++ (replicate emptyLength Empty)
+        newSlots     = if emptyLength > 0
+                       then existedSlots ++ replicate emptyLength Empty
                        else existedSlots
-        emptyLength = 4 - (length existedSlots)
+        emptyLength = 4 - length existedSlots
 
         -- if already won or already inputed 4 guesses, no state change
     2 -> if snd (boss s) || snd (gameStateIndex s) > 3 then s
@@ -359,7 +410,8 @@ userInput s guess =
                   gameStateIndex = newGameStateIndex,
                   pinSlots       = pinSlots s,
                   boss           = boss s,
-                  random         = random s
+                  random         = random s,
+                  aiSearchSpace  = aiSearchSpace s
                 }
       where
         -- newPinSlots  = if colIndex == 3
@@ -374,7 +426,6 @@ userInput s guess =
                         then gameState s
                         else map f (gameState s)
         f row
-        -- | snd row == 1 && colIndex == 3 = (replaceList (fst row) colIndex guess, 2)
           | snd row == 1 && colIndex <= 3 = (replaceList (fst row) colIndex guess, 1)
           | otherwise = row
         -- newGameStateIndex = if colIndex == 3
@@ -394,6 +445,31 @@ userInput s guess =
         --   | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
         --   | otherwise                         = boss s
 
+    4 -> if emptyLength < 0 then s
+          else
+            TuiState
+                      {
+                        homeScreen     = homeScreen s,
+                        screen         = screen s,
+                        navSelect      = navSelect s,
+                        gameState      = gameState s,
+                        gameStateIndex = gameStateIndex s,
+                        pinSlots       = pinSlots s,
+                        boss           = newBoss,
+                        random         = random s,
+                        aiSearchSpace  = aiSearchSpace s
+                      }
+      where
+        newBoss      = (newSlots, snd (boss s))
+        oldSlots     = fst (boss s)
+        existedSlots = filter (\x -> x /= Empty) oldSlots ++ [guess]
+        -- newScreen    = if (emptyLength <= 0)
+        --                then 2
+        --                else (screen s)
+        newSlots     = if (emptyLength > 0)
+                       then existedSlots ++ (replicate emptyLength Empty)
+                       else existedSlots
+        emptyLength = 4 - (length existedSlots)
     _ -> s
 
 -- KBS button
@@ -412,7 +488,8 @@ back s =
                   gameStateIndex = newGameStateIndex,
                   pinSlots       = pinSlots s,
                   boss           = boss s,
-                  random         = random s
+                  random         = random s,
+                  aiSearchSpace  = aiSearchSpace s
                 }
       where
         rowIndex          = fst (gameStateIndex s)
@@ -434,7 +511,31 @@ back s =
                       gameStateIndex = gameStateIndex s,
                       pinSlots       = pinSlots s,
                       boss           = newBoss,
-                      random         = random s
+                      random         = random s,
+                      aiSearchSpace  = aiSearchSpace s
+                    }
+      where
+        newBoss      = (newSlots, snd (boss s))
+        oldSlots     = fst (boss s)
+        existedSlots = filter (/= Empty) oldSlots
+        newSlots     = replaceList oldSlots index Lib.Empty
+        index        = 4 - emptyLength - 1
+        emptyLength = 4 - length existedSlots
+
+
+    4 -> if emptyLength == 4 then s
+          else
+              TuiState
+                    {
+                      homeScreen     = homeScreen s,
+                      screen         = screen s,
+                      navSelect      = navSelect s,
+                      gameState      = gameState s,
+                      gameStateIndex = gameStateIndex s,
+                      pinSlots       = pinSlots s,
+                      boss           = newBoss,
+                      random         = random s,
+                      aiSearchSpace  = aiSearchSpace s
                     }
       where
         newBoss      = (newSlots, snd (boss s))

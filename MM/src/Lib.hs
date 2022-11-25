@@ -1,7 +1,7 @@
-module Lib where
+module Lib (module Lib) where
 
-import Data.List
-import System.Random
+import Data.List (nub)
+import System.Random (randomRIO)
 
 data Slot
   = Empty
@@ -24,6 +24,9 @@ instance Show PinColor where
   show White  = "W"
   show Purple = "P"
   show Yellow = "Y"
+
+color :: [Int]
+color = [0,1,2,3,4,5]
 
 red :: Slot
 red = Guess Red
@@ -53,6 +56,44 @@ controlT = [ "r - red", "b - blue", "g - green", "w - white"
 navControl :: [String]
 navControl = [ "↑/↓ - Navigation", "↩ - Select", "⟵ - remove", "q - exit"]
 
+-- 10 rounds of guessing state for gameScreen
+-- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]
+initialGS :: [([Slot], Int)]
+initialGS = [ ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 0)
+            , ([Empty, Empty, Empty, Empty], 1)
+            ]
+
+initialRS :: [[Slot]]
+initialRS = [ [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            , [Empty, Empty, Empty, Empty]
+            ]
+
+initialBoss :: ([Slot], Bool)
+initialBoss = ([Empty, Empty, Empty, Empty], False)
+
+-- S is the search space for DKAI algorithm
+searchS :: [[Slot]]
+searchS = map intsToSlots (filter hasDuplicate [[a,b,c,d]| a <- color,
+                b <- color,
+                c <- color,
+                d <- color])
+
 -- integer to Slot
 zTs :: Int -> Slot
 zTs x = case x of
@@ -73,12 +114,12 @@ randomGuess n = sequence $ replicate n $ randomRIO (0,5::Int)
 randomSingleGuess :: Int -> IO [Int]
 randomSingleGuess n = do
                         res <- randomGuess n
-                        if hasDuplicate res
+                        if not (hasDuplicate res)
                           then randomSingleGuess n
                           else return res
 
 hasDuplicate :: [Int] -> Bool
-hasDuplicate xs = length (nub xs) /= length xs
+hasDuplicate xs = length (nub xs) == length xs
 
 --        sol       guess                         output    output
 judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
@@ -116,8 +157,18 @@ masterJudge s g =
     where res         = judge s g [] [] []
           emptyLength = 4 - (length res)
 
+-- DKAI algorithm
+dkSearch :: [[Slot]] -> [Slot] -> [Slot]-> [[Slot]]
+dkSearch [] _ _ = []
+dkSearch (x:xs) base res = 
+    if temp == res 
+        then x : dkSearch xs base res
+        else dkSearch xs base res
+        where
+            temp    = masterJudge base x
 
 
+-- title 
 s1, s2, s3, s4, s5 :: String
 
 s1 = "    _/      _/                        _/                          _/      _/   _/                  _/   "
