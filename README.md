@@ -44,6 +44,7 @@ TuiState
     , pinSlots       :: [[String]]       -- list of Slots for the information.
     , boss           :: ([Slot], Bool)   -- the 4 colored pegs that the player is trying to guess.
     , random         :: [Slot]           -- randomly generated colors, used in 1 player mode only.
+    , aiSearchSpace  :: [[Slot]]         -- DKAI algorithm's solution search space
   }
 ```
 - UI Screens
@@ -58,7 +59,7 @@ TuiState
   - DKAI vs Player *(coming soon)*
     Player 1 will be directed to User input screen to input 4(repeat allowed) colors.
     AI will try to make a guess after player press `KENTER`
-    AI's initial guess will be a fixed guess.
+    AI's initial guess will always be [Red, Green, Blue, Yellow].
 
 
 ## Challenges
@@ -70,7 +71,7 @@ TuiState
 - Color attributes
 
 - AI's implementation
-
+  Implementation of Donald Knuth's algorithm, which can solve any non-repeating patterns in (most cases) five moves or fewer. This is the DKAI mode in our game. 
 
 ## Goals
 ### G1
@@ -85,7 +86,7 @@ TuiState
 - TUI navigation and control optimizations. [Done]
 
 ### G4
-- Implementation for the AI player game mode.
+- Implementation for the AI player game mode. [Done]
 - Implementation for variable game settings. (If time permits)
     - Players are allowed to change the followings:
         - Number of rounds
@@ -100,4 +101,4 @@ TuiState
 - Siran Ma
 
 ### History
-Last edit Nov 22, 2022
+Last edit Nov 24, 2022
