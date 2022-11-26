@@ -118,6 +118,7 @@ randomSingleGuess n = do
                           then randomSingleGuess n
                           else return res
 
+-- no duplicate
 hasDuplicate :: [Int] -> Bool
 hasDuplicate xs = length (nub xs) == length xs
 

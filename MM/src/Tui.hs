@@ -17,8 +17,7 @@ import Brick.Util
 import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
--- import Brick.Widgets.Core (padLeftRight)
--- import qualified Brick.Widgets.Center as C
+import Data.List (nub)
 
 tui :: IO ()
 tui = do
@@ -352,22 +351,26 @@ select s =
     -- screen 4
     _ -> if emptyLength /= 0 then s
           else
-            TuiState
+            TuiState -- AI's color input is duplicate protected
                       {
                         homeScreen     = homeScreen s,
-                        screen         = 3,
+                        screen         = newScreen,
                         navSelect      = navSelect s,
                         gameState      = gameState s,
                         gameStateIndex = gameStateIndex s,
                         pinSlots       = pinSlots s,
-                        boss           = boss s,
+                        boss           = newBoss,
                         random         = random s,
                         aiSearchSpace  = aiSearchSpace s
                       }
       where
         oldSlots     = fst (boss s)
         existedSlots = filter (/= Lib.Empty) oldSlots
-        emptyLength = 4 - length existedSlots
+        emptyLength  = 4 - length existedSlots
+        valid        = validInput existedSlots
+        validInput x = length (nub x) == length x
+        newBoss      = if valid then boss s else initialBoss
+        newScreen    = if valid then 3 else 4
 
 userInput :: TuiState -> Slot -> TuiState
 userInput s guess =
