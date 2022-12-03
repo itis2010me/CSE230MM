@@ -152,11 +152,11 @@ check (s:sol) g (slots, _) =
 
 masterJudge :: [Slot] -> [Slot] -> [Slot]
 masterJudge s g =
-  if (emptyLength > 0)
-  then res ++ (replicate emptyLength Empty)
+  if emptyLength > 0
+  then res ++ replicate emptyLength Empty
   else res
     where res         = judge s g [] [] []
-          emptyLength = 4 - (length res)
+          emptyLength = 4 - length res
 
 -- DKAI algorithm
 dkSearch :: [[Slot]] -> [Slot] -> [Slot]-> [[Slot]]
