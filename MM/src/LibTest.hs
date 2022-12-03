@@ -1,3 +1,5 @@
+module LibTest (module LibTest) where
+
 import Lib
 
 get1st (a,_,_) = a
