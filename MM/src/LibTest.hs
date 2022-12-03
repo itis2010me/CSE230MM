@@ -247,6 +247,6 @@ testCase = [
     ([green, white, purple, yellow],[green, white, purple, yellow],[red, red, red, red])
             ]
 
-main :: IO ()
-main = do 
+libTest :: IO ()
+libTest = do 
     putStrLn (show (map show (checkTestCase testCase)))
