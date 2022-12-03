@@ -18,6 +18,7 @@ import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Data.List (nub)
+import qualified Brick.Widgets.Border as B
 
 tui :: IO ()
 tui = do
@@ -120,7 +121,7 @@ drawTui ts =
                 box       = B.borderWithLabel label inside
                 inside    = drawInputScreen (boss ts)
                 label     = str "Please Input Color for DKAI"
-                aiInputUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox)
+                aiInputUI = (C.vCenter $ C.hCenter $ box) <=> (C.vCenter $ C.hCenter $ controlBox) 
 
 drawBossUI :: ([Slot], Bool) -> String ->  Widget ()
 drawBossUI (solution, showSol) bossLabel = bUI
@@ -149,7 +150,7 @@ drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
 controlBox :: Widget ()
 controlBox = setAvailableSize (50, 52) (withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC))
             where
-              controlLabel = str "Controls"
+              controlLabel = str "Controls & Info"
               controls     = vBox $ map drawListElement controlT
               navigationC  = vBox $ map drawListElement navControl
 
