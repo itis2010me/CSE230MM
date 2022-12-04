@@ -39,6 +39,7 @@ library:
     - brick
     - vty
     - random
+    - QuickCheck
 
 executables:
   MM-exe:
@@ -53,6 +54,7 @@ executables:
     - brick
     - vty
     - random
+    - QuickCheck
 
 tests:
   MM-test:
@@ -67,3 +69,4 @@ tests:
     - brick
     - vty
     - random
+    - QuickCheck
