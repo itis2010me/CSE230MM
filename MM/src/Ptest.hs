@@ -25,7 +25,7 @@ genUniqueSlot = do
                 b <- chooseInt (0,5)
                 c <- chooseInt (0,5)
                 d <- chooseInt (0,5)
-                if L.hasDuplicate [a,b,c,d]
+                if L.hasNoDuplicate [a,b,c,d]
                     then return (L.intsToSlots [a,b,c,d])
                     else genUniqueSlot 
 

@@ -54,7 +54,7 @@ controlT :: [String]
 controlT = [ "r - red", "b - blue", "g - green", "w - white"
             , "p - purple", "y - yellow"]
 navControl :: [String]
-navControl = [ "↑/↓ - Navigation", "↩ - Select", "⟵ - remove", "q - exit", "No duplicate input!", "Press Enter for next AI move"]
+navControl = [ "↑/↓ - Navigation", "↩ - Select", "⟵ - remove", "q - exit"]
 
 -- 10 rounds of guessing state for gameScreen
 -- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]
@@ -89,7 +89,7 @@ initialBoss = ([Empty, Empty, Empty, Empty], False)
 
 -- S is the search space for DKAI algorithm
 searchS :: [[Slot]]
-searchS = map intsToSlots (filter hasDuplicate [[a,b,c,d]| a <- color,
+searchS = map intsToSlots (filter hasNoDuplicate [[a,b,c,d]| a <- color,
                 b <- color,
                 c <- color,
                 d <- color])
@@ -114,13 +114,13 @@ randomGuess n = sequence $ replicate n $ randomRIO (0,5::Int)
 randomSingleGuess :: Int -> IO [Int]
 randomSingleGuess n = do
                         res <- randomGuess n
-                        if not (hasDuplicate res)
+                        if not (hasNoDuplicate res)
                           then randomSingleGuess n
                           else return res
 
 -- no duplicate
-hasDuplicate :: [Int] -> Bool
-hasDuplicate xs = length (nub xs) == length xs
+hasNoDuplicate :: [Int] -> Bool
+hasNoDuplicate xs = length (nub xs) == length xs
 
 --        sol       guess                         output    output
 judge :: [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot] -> [Slot]
@@ -152,11 +152,11 @@ check (s:sol) g (slots, _) =
 
 masterJudge :: [Slot] -> [Slot] -> [Slot]
 masterJudge s g =
-  if emptyLength > 0
-  then res ++ replicate emptyLength Empty
+  if (emptyLength > 0)
+  then res ++ (replicate emptyLength Empty)
   else res
     where res         = judge s g [] [] []
-          emptyLength = 4 - length res
+          emptyLength = 4 - (length res)
 
 -- DKAI algorithm
 dkSearch :: [[Slot]] -> [Slot] -> [Slot]-> [[Slot]]
