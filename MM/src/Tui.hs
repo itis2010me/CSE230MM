@@ -35,7 +35,7 @@ data TuiState =
     , gameState      :: [([Slot], Int)]  -- 10 rounds of guessing state for gameScreen
     , gameStateIndex :: (Int, Int)       -- current input pointer, rowIndex and colIndex
     , pinSlots       :: [[Slot]]         -- used for showing each rounds result, each round has 4 elements which can be: ["Empty": both color & position false, "Red": both color & position true, "White": color true & position false]
-    , boss           :: ([Slot], Bool)   -- guess for guessing player to guess
+    , boss           :: ([Slot], Bool)   -- guess solution for player to guess
     , random         :: [Slot]           -- randomly generated colors, used in 1 player mode
     , aiSearchSpace  :: [[Slot]]         -- DKAI algorithm's solution search space
   }
@@ -211,6 +211,7 @@ homeScreenSelect :: TuiState -> Int -> TuiState
 homeScreenSelect s dir =
   case screen s of
     1 -> case dir of
+          -- 1 means down, 0 means up
           1 -> TuiState {
                         homeScreen    = homeScreen s,
                         screen         = screen s,
@@ -291,7 +292,7 @@ select s =
         newGameState      = if newRowIndex == (-1) then newGameState1
                             else replaceList newGameState1 newRowIndex emptyRow
         newPinSlots       = replaceList (pinSlots s) rowIndex judgeResult
-        guessRow          = fst (gameState s !! max 0 rowIndex)
+        guessRow          = fst (gameState s !! (max 0 rowIndex))
         judgeResult       = masterJudge (fst(boss s)) guessRow
         newBoss
           | judgeResult == success            = (fst (boss s), True)
@@ -316,7 +317,7 @@ select s =
                       }
       where
         oldSlots     = fst (boss s)
-        existedSlots = filter (/= Lib.Empty) oldSlots
+        existedSlots = filter (/= Empty) oldSlots
         emptyLength = 4 - length existedSlots
 
     -- AI mode selection
@@ -394,9 +395,6 @@ userInput s guess =
         newBoss      = (newSlots, snd (boss s))
         oldSlots     = fst (boss s)
         existedSlots = filter (/= Empty) oldSlots ++ [guess]
-        -- newScreen    = if (emptyLength <= 0)
-        --                then 2
-        --                else (screen s)
         newSlots     = if emptyLength > 0
                        then existedSlots ++ replicate emptyLength Empty
                        else existedSlots
@@ -418,36 +416,17 @@ userInput s guess =
                   aiSearchSpace  = aiSearchSpace s
                 }
       where
-        -- newPinSlots  = if colIndex == 3
-        --                then replaceList (pinSlots s) rowIndex judgeResult
-        --                else pinSlots s
-        -- newGameState = if colIndex == 3
-        --                then if rowIndex <= 0
-        --                     then map f (gameState s)
-        --                     else replaceList (map f (gameState s)) newRowIndex newRow
-        --                else map f (gameState s)
         newGameState = if colIndex > 3
                         then gameState s
                         else map f (gameState s)
         f row
           | snd row == 1 && colIndex <= 3 = (replaceList (fst row) colIndex guess, 1)
           | otherwise = row
-        -- newGameStateIndex = if colIndex == 3
-        --                     then (rowIndex - 1, 0) -- rowIndex starts at 9, decrement to move up
-        --                     else (rowIndex, colIndex + 1)
         newGameStateIndex = if colIndex > 3
                             then gameStateIndex s
                             else (rowIndex, colIndex + 1)
         rowIndex     = fst (gameStateIndex s)
         colIndex     = snd (gameStateIndex s)
-        -- newRowIndex  = fst newGameStateIndex
-        -- newRow       = ([Empty, Empty, Empty, Empty], 1)
-        -- guessRow     = fst (head (snd (splitAt rowIndex newGameState)))
-        -- judgeResult  = masterJudge (fst(boss s)) guessRow
-        -- newBoss
-        --   | judgeResult == success            = (fst (boss s), True)
-        --   | rowIndex    == 0 && colIndex == 3 = (fst (boss s), True)
-        --   | otherwise                         = boss s
 
     4 -> if emptyLength < 0 then s
           else
@@ -467,9 +446,6 @@ userInput s guess =
         newBoss      = (newSlots, snd (boss s))
         oldSlots     = fst (boss s)
         existedSlots = filter (\x -> x /= Empty) oldSlots ++ [guess]
-        -- newScreen    = if (emptyLength <= 0)
-        --                then 2
-        --                else (screen s)
         newSlots     = if (emptyLength > 0)
                        then existedSlots ++ (replicate emptyLength Empty)
                        else existedSlots
@@ -561,8 +537,6 @@ handleTuiEvent s e =
     VtyEvent vtye ->
       case vtye of
         EvKey (KChar 'q')  [] -> halt s
-        -- EvKey KLeft        [] -> continue $ update s "←"
-        -- EvKey KRight       [] -> continue $ update s "→"
         EvKey KUp          [] -> continue $ homeScreenSelect s 0
         EvKey KDown        [] -> continue $ homeScreenSelect s 1
         EvKey KEnter       [] -> continue $ select s
