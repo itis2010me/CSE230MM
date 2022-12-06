@@ -70,6 +70,32 @@ compareM :: ([L.Slot],[L.Slot]) -> Int
 compareM ([],[]) = 0
 compareM (x:xs, y:ys) = if x == y then 1 + compareM (xs, ys) else compareM (xs, ys)
 
+-- ([P,W,R,B], [G,W,B,R]) ([],[]) 1 -> ([P,R,B], [G,B,R])
+filterRed :: ([L.Slot],[L.Slot]) -> ([L.Slot],[L.Slot]) -> Int -> ([L.Slot],[L.Slot])
+filterRed (xs, ys) (rx, ry) 0 = (rx++xs, ry++ys)
+filterRed (x:xs, y:ys) r@(rx, ry) n = if x == y 
+                                then filterRed (xs, ys) r (n-1) 
+                                else filterRed (xs, ys) (rx++[x], ry++[y]) n
+
+
+-- Note: assuming no duplicate colors
+findWhite :: ([L.Slot],[L.Slot]) -> Int -> Int
+findWhite ([], _) n = n
+findWhite (x:xs, ys) n = if x `elem` ys 
+                            then findWhite (xs, ys) (n+1)
+                            else findWhite (xs, ys) n
+
+
+whiteJudge :: ([L.Slot],[L.Slot]) -> Bool
+whiteJudge (test, guess) = numWhite == numWhiteRes
+    where
+        res         = L.masterJudge test guess
+        numWhiteRes = length (filter (== L.white) res)
+        numRedRes   = length (filter (== L.red) res)
+        redFiltered = filterRed (test, guess) ([],[]) numRedRes
+        numWhite    = findWhite redFiltered 0
+
+
 judgeSize :: ([L.Slot],[L.Slot]) -> Bool
 judgeSize (test, guess) = resSize == 4
     where
@@ -102,6 +128,10 @@ prop_genSlotEmpty1 = forAll genUniqueTest empty1Judge
 prop_redJudge :: Property
 prop_redJudge = forAll genSlotTest redJudge
 
+-- number of white pins should match the number of correct colors left after red-pin checks
+prop_whiteJudge :: Property
+prop_whiteJudge = forAll genUniqueTest whiteJudge
+
 -- All judgement should be size 4
 prop_judgeSize :: Property
 prop_judgeSize = forAll genSlotTest judgeSize
@@ -125,6 +155,9 @@ quickCheckN n = quickCheckWith (stdArgs {maxSuccess = n})
 -- +++ OK, passed 10000 tests.
 
 -- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_genredJudge
+-- +++ OK, passed 10000 tests.
+
+-- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_whiteJudge
 -- +++ OK, passed 10000 tests.
 
 -- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_dkSearchSize

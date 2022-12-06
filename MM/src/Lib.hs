@@ -42,7 +42,7 @@ purple :: Slot
 purple = Guess Purple
 
 testSol :: [Slot]
-testSol = [green, white, red, blue]
+testSol = [purple, white, red, blue]
 
 testGuess :: [Slot]
 testGuess = [green, white, blue, red]
