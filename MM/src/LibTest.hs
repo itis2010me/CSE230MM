@@ -20,6 +20,11 @@ checkSingleTestCase testCase = (masterJudge s g == ans)
         g = get2nd testCase
         ans = get3rd testCase
 
+countFalseNumber :: [Bool] -> Int
+countFalseNumber [] = 0
+countFalseNumber (False:xs) = 1 + countFalseNumber xs
+countFalseNumber (True:xs) = countFalseNumber xs
+
 testCase :: [([Slot], [Slot], [Slot])]
 testCase = [
     ([red, blue, green, white],[red, blue, green, white],[red, red, red, red]),
@@ -251,4 +256,4 @@ testCase = [
 
 libTest :: IO ()
 libTest = do 
-    putStrLn (show (map show (checkTestCase testCase)))
+    putStrLn ("Number of false cases: " ++ show (countFalseNumber (checkTestCase testCase)))
