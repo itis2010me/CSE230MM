@@ -35,6 +35,13 @@ genUniqueTest = do
                 y <- genUniqueSlot
                 return (x,y)
 
+genDkTest :: Gen ([[L.Slot]], [L.Slot], [L.Slot])
+genDkTest = do
+                x <- genUniqueSlot
+                y <- genUniqueSlot
+                return (L.searchS,x,y)
+
+
 invalidJudge :: ([L.Slot],[L.Slot]) -> Bool
 invalidJudge (test, guess) = res /= invalid
     where
@@ -69,6 +76,13 @@ judgeSize (test, guess) = resSize == 4
         res     = L.masterJudge test guess
         resSize = length res
 
+aiSpaceReduce :: ([[L.Slot]], [L.Slot], [L.Slot]) -> Bool
+aiSpaceReduce (space, test, guess) = ogSize > newSize 
+    where
+        ogSize   = length space
+        newSpace = L.dkSearch space test guess
+        newSize  = length newSpace
+
 
 -- No judgement should return [R,R,R,W] as a result
 prop_genSlotInvalid :: Property
@@ -92,6 +106,9 @@ prop_redJudge = forAll genSlotTest redJudge
 prop_judgeSize :: Property
 prop_judgeSize = forAll genSlotTest judgeSize
 
+prop_dkSearchSize :: Property
+prop_dkSearchSize = forAll genDkTest aiSpaceReduce
+
 -- Check for 10000 tests
 quickCheckN :: Testable prop => Int -> prop -> IO ()
 quickCheckN n = quickCheckWith (stdArgs {maxSuccess = n})
@@ -105,4 +122,13 @@ quickCheckN n = quickCheckWith (stdArgs {maxSuccess = n})
 -- +++ OK, passed 10000 tests.
 
 -- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_genSlotEmpty1 
+-- +++ OK, passed 10000 tests.
+
+-- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_genredJudge
+-- +++ OK, passed 10000 tests.
+
+-- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_dkSearchSize
+-- +++ OK, passed 10000 tests.
+
+-- *Main Lib LibTest Paths_MM Ptest Tui Test.QuickCheck> quickCheckN 10000 prop_judgeSize
 -- +++ OK, passed 10000 tests.

@@ -88,10 +88,15 @@ TuiState
   Could be seperate game screens and state variables that the system keeps track of, or having the game settings in a seperate readable file outside. 
 
 ## Property Based Testing
-- Our game logic has three simple properties that can be tested with `QuickCheck`.
+- Our game logic has below simple properties that can be tested with `QuickCheck`.
   - No judgement should produce `[R,R,R,W]` as a result.
   - For combinations without duplicate pegs, the minimum result should be `[W,W]`
     - Check for `[]` and `[W]`.
+  - Number of red pins should match number of color correct pegs placed at correct positions.
+  - All judgements should be of size 4.
+  - AI's search space should be strickly reduced at each iteration. 
+
+Quickcheck of randomly generated 10000 tests, even though there are only 1296 possible color combinations(with duplicate).
 
 Result:
 ```haskell
@@ -102,6 +107,15 @@ Result:
 +++ OK, passed 10000 tests.
 
 *Main Test.QuickCheck> quickCheckN 10000 prop_genSlotEmpty1 
++++ OK, passed 10000 tests.
+
+*Main Test.QuickCheck> quickCheckN 10000 prop_genredJudge
++++ OK, passed 10000 tests.
+
+*Main Test.QuickCheck> quickCheckN 10000 prop_dkSearchSize
++++ OK, passed 10000 tests.
+
+*Main Test.QuickCheck> quickCheckN 10000 prop_judgeSize
 +++ OK, passed 10000 tests.
 ```
 
