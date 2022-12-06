@@ -2,8 +2,11 @@ module LibTest (module LibTest) where
 
 import Lib
 
+get1st :: (a, b, c) -> a
 get1st (a,_,_) = a
+get2nd :: (a, b, c) -> b
 get2nd (_,a,_) = a
+get3rd :: (a, b, c) -> c
 get3rd (_,_,a) = a
 
 -- assert :: Bool -> String -> String
@@ -14,11 +17,11 @@ checkTestCase :: [([Slot], [Slot], [Slot])] -> [Bool]
 checkTestCase xs = map checkSingleTestCase xs
 
 checkSingleTestCase :: ([Slot], [Slot], [Slot]) -> Bool
-checkSingleTestCase testCase = (masterJudge s g == ans)
+checkSingleTestCase testCases = (masterJudge s g == ans)
     where
-        s = get1st testCase
-        g = get2nd testCase
-        ans = get3rd testCase
+        s = get1st testCases
+        g = get2nd testCases
+        ans = get3rd testCases
 
 countFalseNumber :: [Bool] -> Int
 countFalseNumber [] = 0
