@@ -3,7 +3,6 @@ module Ptest (module Ptest) where
 import Test.QuickCheck
 import qualified Lib as L
 
-
 genSlot :: Gen [L.Slot]
 genSlot = do
             a <- chooseInt (0,5)
@@ -53,6 +52,24 @@ empty1Judge (test, guess) = res /= invalid
         res = L.masterJudge test guess
         invalid = [L.white, L.Empty, L.Empty, L.Empty]
 
+redJudge :: ([L.Slot],[L.Slot]) -> Bool
+redJudge x@(test, guess) = numRed == numRedRes
+    where
+        res       = L.masterJudge test guess
+        numRedRes = length (filter (== L.red) res)
+        numRed    = compareM x
+
+compareM :: ([L.Slot],[L.Slot]) -> Int
+compareM ([],[]) = 0
+compareM (x:xs, y:ys) = if x == y then 1 + compareM (xs, ys) else compareM (xs, ys)
+
+judgeSize :: ([L.Slot],[L.Slot]) -> Bool
+judgeSize (test, guess) = resSize == 4
+    where
+        res     = L.masterJudge test guess
+        resSize = length res
+
+
 -- No judgement should return [R,R,R,W] as a result
 prop_genSlotInvalid :: Property
 prop_genSlotInvalid = forAll genSlotTest invalidJudge
@@ -66,6 +83,14 @@ prop_genSlotEmpty = forAll genUniqueTest emptyJudge
 -- Minimum [W,W] should be returned
 prop_genSlotEmpty1 :: Property
 prop_genSlotEmpty1 = forAll genUniqueTest empty1Judge
+
+-- number of red pins should match number of color correct pegs placed at correct positions
+prop_redJudge :: Property
+prop_redJudge = forAll genSlotTest redJudge
+
+-- All judgement should be size 4
+prop_judgeSize :: Property
+prop_judgeSize = forAll genSlotTest judgeSize
 
 -- Check for 10000 tests
 quickCheckN :: Testable prop => Int -> prop -> IO ()
