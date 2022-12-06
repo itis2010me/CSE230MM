@@ -93,6 +93,7 @@ TuiState
   - For combinations without duplicate pegs, the minimum result should be `[W,W]`
     - Check for `[]` and `[W]`.
   - Number of red pins should match number of color correct pegs placed at correct positions.
+  - Number of white pins should match the number of correct colors left after red-pin checks
   - All judgements should be of size 4.
   - AI's search space should be strickly reduced at each iteration. 
 
@@ -110,6 +111,9 @@ Result:
 +++ OK, passed 10000 tests.
 
 *Main Test.QuickCheck> quickCheckN 10000 prop_genredJudge
++++ OK, passed 10000 tests.
+
+*Main Test.QuickCheck> quickCheckN 10000 prop_whiteJudge
 +++ OK, passed 10000 tests.
 
 *Main Test.QuickCheck> quickCheckN 10000 prop_dkSearchSize
@@ -148,4 +152,4 @@ Result:
 - Siran Ma
 
 ### History
-Last edit Dec 3, 2022
+Last edit Dec 5, 2022
