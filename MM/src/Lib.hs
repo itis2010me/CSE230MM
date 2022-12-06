@@ -55,6 +55,8 @@ controlT = [ "r - red", "b - blue", "g - green", "w - white"
             , "p - purple", "y - yellow"]
 navControl :: [String]
 navControl = [ "↑/↓ - Navigation", "↩ - Select", "⟵ - remove", "q - exit"]
+notice :: [String]
+notice = ["Attention: \n No duplicated colors!!!"]
 
 -- 10 rounds of guessing state for gameScreen
 -- the 2nd parameter is used for choosing current round: [0: "Not start yet", 1: "Current Round", 2:"Prior Rounds"]

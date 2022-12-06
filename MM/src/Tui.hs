@@ -126,11 +126,12 @@ drawInputScreen row = emptySpace <+> rowUI <+> emptySpace
     emptySpace = str "            "
 
 controlBox :: Widget ()
-controlBox = setAvailableSize (50, 52) (withBorderStyle ascii $ B.borderWithLabel controlLabel (controls <+> navigationC))
+controlBox = setAvailableSize (50, 52) (withBorderStyle ascii $ B.borderWithLabel controlLabel ((controls <+> navigationC) <=> noticeC))
             where
               controlLabel = str "Controls & Info"
               controls     = vBox $ map drawListElement controlT
               navigationC  = vBox $ map drawListElement navControl
+              noticeC      = vBox $ map drawListElement notice
 
 drawHomeScreen :: [String] -> Int -> Int -> Widget ()
 drawHomeScreen [] _ _ = emptyWidget
