@@ -12,6 +12,7 @@ _/      _/    _/_/_/  _/_/_/        _/_/    _/_/_/  _/
  _/      _/   _/  _/    _/  _/    _/      
 _/      _/   _/  _/    _/    _/_/_/   
 ```
+
 # Project Organization
 
 - `README.md` - This file. 
@@ -25,6 +26,7 @@ _/      _/   _/  _/    _/    _/_/_/
 
 ## Application
 Our application is based on the 1970 boardgame "MasterMind". 
+![image info](./figures/MM_img.jpeg)
 
 ## [Classic MasterMind Game](https://en.wikipedia.org/wiki/Mastermind_(board_game))
 This game aims to guess the correct sequence of colors in 4 positions. We will have two players, one player guesses and one player provides the colors and the positions of the 4 pegs. For example, the answer could be blue, red, yellow, green and the player needs to guess both the color and the order correctly. There will be 6 colors available. The guesser will guess up to 10 rounds and each round the player would know extra information about the answer based on the current guess.
