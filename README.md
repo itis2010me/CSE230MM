@@ -124,10 +124,10 @@ Result:
 ```
 
 ## Manual-Based Testing
--Our game logic can also be tested manually by iterating all possible input situations. The MasterJudge Function is responsible for making judgment by comparing the user's input(in the form of "[pinColor,pinColor,pinColor,pinColor]") with the final answer(in the form of "[pinColor,pinColor,pinColor,pinColor]"). Since the input pins' colors are selected from 6 colors and can not be repeated, there are 6*5*4*3=360 possible input arrays. Similarly, the final answer also has 360 possible states. Considering that the arrangement of different colors is symmetrical, there are essentially (360/(4*3*2*1))^2=225 combinations for the MasterJudge Function to judge. Therefore, we listed the 225 testing cases and tested them manually.
+- Our game logic can also be tested manually by iterating all possible input situations. The MasterJudge Function is responsible for making judgment by comparing the user's input(in the form of "[pinColor,pinColor,pinColor,pinColor]") with the final answer(in the form of "[pinColor,pinColor,pinColor,pinColor]"). Since the input pins' colors are selected from 6 colors and can not be repeated, there are 6\*5\*4\*3=360 possible input arrays. Similarly, the final answer also has 360 possible states. Considering that the arrangement of different colors is symmetrical, there are essentially (360/(4\*3\*2\*1))^2=225 combinations for the MasterJudge Function to judge. Therefore, we listed the 225 testing cases and tested them manually.
 
 ## User Interaction Testing
--Our game has 5 screens to implement user interactions. We manually test the switching between each screen to ensure that undefined I/O operations do not cause any errors. Our testing guarantees that 3 different game modes can be conducted smoothly from the home screen to the end screen.
+- Our game has 5 screens to implement user interactions. We manually test the switching between each screen to ensure that undefined I/O operations do not cause any errors. Our testing guarantees that 3 different game modes can be conducted smoothly from the home screen to the end screen.
 
 ## Goals
 ### G1
