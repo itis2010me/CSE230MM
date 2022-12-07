@@ -18,7 +18,6 @@ import Brick.Widgets.Border.Style
 import qualified Brick.Widgets.Border as B
 import qualified Brick.Widgets.Center as C
 import Data.List (nub)
-import qualified Brick.Widgets.Border as B
 
 tui :: IO ()
 tui = do
@@ -85,7 +84,7 @@ drawTui ts =
               inside = (drawHomeScreen (homeScreen ts) (navSelect ts) 0)
               label  = str "Game Modes"
               homeUI = drawTitle <=> (C.hCenter box) <=> (C.vCenter $ C.hCenter $ controlBox)
-        2  -> [outUI]
+        _  -> [outUI]
             where
               boxGuess     = B.borderWithLabel labelGuess insideGuess
               insideGuess  = vBox $ map drawRow (gameState ts)
@@ -297,7 +296,7 @@ select s =
         emptyRow          = ([Lib.Empty, Lib.Empty, Lib.Empty, Lib.Empty], 1)
 
     -- just switch to screen 2 if ready
-    0 -> if emptyLength /= 0 then s
+    _ -> if emptyLength /= 0 then s
           else
             TuiState -- color input is duplicate protected
                       {

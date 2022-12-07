@@ -61,12 +61,10 @@ TuiState
   - Home screen
   - Game screen
   - User input screen
-  - AI input screen
-  - AI game screen
 - Game Modes
   - 1 Player - Player trying to guess the randomly generated 4 colored pegs, currenly restricting to non-repeating colors.
   - 2 Players
-    Player 1 will be directed to User input screen to input 4(repeat allowed) colors.
+    Player 1 will be directed to User input screen to input 4(repeat disallowed) colors.
     Player 2 will be trying to guess those 4 colors.
   - DKAI vs Player 
     Player 1 will be directed to User input screen to input 4(repeat disallowed) colors.
@@ -146,10 +144,10 @@ Result:
 
 
 ## Collaborator
-- Chufan Wu
-- Yuan Chang
-- Yuxin Liu
-- Siran Ma
+- Chufan Wu (Testing)
+- Yuan Chang (Logic)
+- Yuxin Liu (Interface)
+- Siran Ma (Testing)
 
 ### History
 Last edit Dec 5, 2022
